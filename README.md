@@ -8,3 +8,9 @@ git clone https://github.com/staverm/DARPwTransformers.git && cd DARPwTransforme
 conda env create --prefix ./env --file environment.yml
 conda activate ./env
 ```
+
+Run Nearest Neighbour strategy on the smallest instance of cordeau:
+```bash
+cd darp
+python3 run.py
+```
