@@ -1,0 +1,11 @@
+name: darp_env
+channels:
+  - defaults
+dependencies:
+  - python=3.8
+  - pytorch
+  - numpy
+  - matplotlib
+  - pip
+  - pip:
+    - icecream
