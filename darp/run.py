@@ -111,7 +111,7 @@ def goooo():
             tags=tags_list)
 
     # Get the trainer object
-    trainer = SupervisedTrainer(parameters, sacred=None)
+    trainer = SupervisedTrainer(parameters, sacred=task)
 
     # Start a train
     trainer.run()

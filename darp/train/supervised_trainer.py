@@ -6,7 +6,6 @@ import json
 import numpy as np
 import math
 import copy
-# from clearml import Task
 from icecream import ic
 import drawSvg as draw
 import seaborn as sn
@@ -48,7 +47,7 @@ torch.autograd.set_detect_anomaly(True)
 
 
 class SupervisedTrainer():
-    def __init__(self, flags, sacred=True):
+    def __init__(self, flags, sacred=None):
         ''' Inintialisation of the trainner:
                 Entends to load all the correct set up, ready to train
         '''
