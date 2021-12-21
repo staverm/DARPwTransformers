@@ -27,7 +27,7 @@ class DataFileGenerator():
             self.params = {
                 'size': 10,
                 'target_population': 5,
-                'driver_population': 2,
+                'driver_population': 3,
                 'reward_function': 'ConstantReward',
                 'time_end': 1400,
                 'max_step': 2000,
