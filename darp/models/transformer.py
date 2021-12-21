@@ -3,8 +3,8 @@ import torch
 import torch.nn as nn
 
 from utils import get_device, plotting, quinconx
-from classifier import Classifier
-from darp.models.encoder import Encoder
+from .classifier import Classifier
+from .encoder import Encoder
 # from transformerblock import TransformerBlock
 
 
@@ -167,9 +167,8 @@ class Trans18(nn.Module):
         src = environment.to(self.device)
         dropout = nn.Dropout(self.dropout)
         src = dropout(src)
-        for i in range(self.num_layers):
-            print("encoder num. {}".format(i))
-            src = self.encoders(src, src, src, src_mask)  # (value, key, query, mask)
+        for i, encoder in enumerate(self.encoders):
+            src = encoder(src, src, src, src_mask)  # (value, key, query, mask)
 
 
         if self.classifier_type in [6, 7]:
