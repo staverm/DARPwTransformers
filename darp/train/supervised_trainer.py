@@ -576,6 +576,7 @@ class SupervisedTrainer():
                 if 'supervision_data' in locals():
                     del supervision_data
                     del validation_data
+                ic(epoch)
                 supervision_data, validation_data = self.updating_data() #FIXME always 
                 round_counter = 0
             self.train(supervision_data)
