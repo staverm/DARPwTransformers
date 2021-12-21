@@ -6,7 +6,6 @@ import json
 import numpy as np
 import math
 import copy
-# from clearml import Task
 from icecream import ic
 import drawSvg as draw
 import seaborn as sn
@@ -38,7 +37,6 @@ from generator import DataFileGenerator #, RFGenerator
 # from dialRL.strategies.external.darp_rf.run_rf_algo import run_rf_algo
 
 
-
 torch.autograd.set_detect_anomaly(True)
 # os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # FATAL
 # logging.getLogger('tensorflow').setLevel(logging.FATAL)
@@ -63,11 +61,11 @@ class SupervisedTrainer():
             self.path_name = '/'.join([self.sacred.experiment_info['base_dir'], self.file_dir, str(self.sacred._id)])
         else :
             self.path_name = self.rootdir + '/data/rl_experiments/' + self.alias + time.strftime("%d-%H-%M") + '_typ' + str(self.typ)
-            print(' ** Saving train path: ', self.path_name)
+            ic(' ** Saving train path: ', self.path_name)
             if not os.path.exists(self.path_name):
                 os.makedirs(self.path_name, exist_ok=True)
             else :
-                print(' Already such a path.. adding random seed')
+                ic(' Already such a path.. adding random seed')
                 self.path_name = self.path_name + '#' + str(torch.randint(0, 10000, [1]).item())
                 os.makedirs(self.path_name, exist_ok=True)
 
@@ -86,82 +84,7 @@ class SupervisedTrainer():
         self.classifier_type = 1
 
         reward_function = globals()[self.reward_function]()
-        if self.typ==15:
-            self.rep_type = '15'
-        elif self.typ==16:
-            self.rep_type = '16'
-        elif self.typ==17:
-            self.rep_type = '17'
-            self.model='Trans17'
-        elif self.typ in [18, 19]:
-            self.rep_type = '17'
-            self.model='Trans17'
-        elif self.typ in [20, 21, 22]:
-            self.encoder_bn=True
-            self.rep_type = '17'
-            self.model='Trans17'
-            self.emb_typ = self.typ - 3
-        elif self.typ in [23, 24, 25]:
-            self.encoder_bn=True
-            self.decoder_bn=True
-            self.rep_type = '17'
-            self.model='Trans17'
-            self.emb_typ = self.typ - 6
-        elif self.typ in [26]:
-            self.encoder_bn=False
-            self.decoder_bn=False
-            self.rep_type = '16'
-            self.model='Trans18'
-            self.emb_typ = self.typ
-        elif self.typ in [27]:
-            # 2 layer + 0 output
-            self.classifier_type = 2
-            self.encoder_bn=False
-            self.decoder_bn=False
-            self.rep_type = '16'
-            self.model='Trans18'
-            self.emb_typ = 26
-        elif self.typ in [28]:
-            # 2 layer + mixing dimentions
-            self.classifier_type = 3
-            self.encoder_bn=False
-            self.decoder_bn=False
-            self.rep_type = '16'
-            self.model='Trans18'
-            self.emb_typ = 26
-        elif self.typ in [29]:
-            # On layer + 0 dim as output
-            self.classifier_type = 4
-            self.encoder_bn=False
-            self.decoder_bn=False
-            self.rep_type = '16'
-            self.model='Trans18'
-            self.emb_typ = 26
-        elif self.typ in [30]:
-            # On layer + mixer layer
-            self.classifier_type = 5
-            self.encoder_bn=False
-            self.decoder_bn=False
-            self.rep_type = '16'
-            self.model='Trans18'
-            self.emb_typ = 26
-        elif self.typ in [31]:
-            # 1 layer + driver output
-            self.classifier_type = 6
-            self.encoder_bn=False
-            self.decoder_bn=False
-            self.rep_type = '16'
-            self.model='Trans18'
-            self.emb_typ = 26
-        elif self.typ in [32]:
-            # 1 layer + driver output (but with a shift that should be better)
-            self.classifier_type = 7
-            self.encoder_bn=False
-            self.decoder_bn=False
-            self.rep_type = '16'
-            self.model='Trans18'
-            self.emb_typ = 26
-        elif self.typ in [33]:
+        if self.typ in [33]:
             # 1 layer with all infformation concatenated
             self.classifier_type = 8
             self.encoder_bn=False
@@ -169,90 +92,9 @@ class SupervisedTrainer():
             self.rep_type = '16'
             self.model='Trans18'
             self.emb_typ = 26
-        elif self.typ in [34]:
-            # one Autotransformer + 1 layer with all infformation concatenated
-            self.classifier_type = 9
-            self.encoder_bn=False
-            self.decoder_bn=False
-            self.rep_type = '16'
-            self.model='Trans18'
-            self.emb_typ = 26
-        elif self.typ in [35]:
-            # 1 layer with 4 last vectors of transformer concatenated
-            self.classifier_type = 10
-            self.encoder_bn=False
-            self.decoder_bn=False
-            self.rep_type = '16'
-            self.model='Trans18'
-            self.emb_typ = 26
-        elif self.typ in [36]:
-            # 4 last encoder vectors + flatten in 1 layer
-            self.classifier_type = 11
-            self.encoder_bn=False
-            self.decoder_bn=False
-            self.rep_type = '16'
-            self.model='Trans18'
-            self.emb_typ = 26
-        elif self.typ in [37]:
-            # 32 but with batch norm in encoder
-            self.classifier_type = 7
-            self.encoder_bn=True
-            self.decoder_bn=False
-            self.rep_type = '16'
-            self.model='Trans18'
-            self.emb_typ = 26
-        elif self.typ in [38]:
-            # Adding the last 4 layers, concatenated as in 33
-            self.classifier_type = 12
-            self.encoder_bn=False
-            self.decoder_bn=False
-            self.rep_type = '16'
-            self.model='Trans18'
-            self.emb_typ = 26
-
-        # Pre Train module now
-        elif self.typ in [40]:
-            # Take as 38 ?
-            self.classifier_type = 12
-            self.emb_typ = 40
-            self.encoder_bn=False
-            self.decoder_bn=False
-            self.rep_type = '18'
-            self.unfreezing_strat=1
-            self.model='Trans19'
-        elif self.typ in [41]:
-            # Take as 38 + Unfreeze all
-            self.classifier_type = 12
-            self.emb_typ = 40
-            self.encoder_bn=False
-            self.decoder_bn=False
-            self.rep_type = '18'
-            self.unfreezing_strat = 2
-            self.model='Trans19'
-        elif self.typ in [42]:
-            # Take as 34
-            self.classifier_type = 9
-            self.emb_typ = 40
-            self.encoder_bn=False
-            self.decoder_bn=False
-            self.rep_type = '18'
-            self.unfreezing_strat = 1
-            self.model='Trans19'
-        elif self.typ in [43]:
-            # Take as 34 + unfreeze all
-            self.classifier_type = 9
-            self.emb_typ = 40
-            self.encoder_bn=False
-            self.decoder_bn=False
-            self.rep_type = '18'
-            self.unfreezing_strat = 2
-            self.model='Trans19'
-
-
         else :
             raise "Find your own typ men"
 
-        ## TODO: Add globals()[self.env]
         self.env = DarSeqEnv(size=self.image_size,
                           target_population=self.nb_target,
                           driver_population=self.nb_drivers,
@@ -264,7 +106,6 @@ class SupervisedTrainer():
                           dataset=self.dataset,
                           verbose=self.verbose)
 
-        # self.eval_env = DummyVecEnv([lambda : DarSeqEnv(size=self.image_size,
         self.eval_env = DarSeqEnv(size=self.image_size,
                                   target_population=self.nb_target,
                                   driver_population=self.nb_drivers,
@@ -274,7 +115,7 @@ class SupervisedTrainer():
                                   timeless=self.timeless,
                                   test_env=True,
                                   dataset=self.dataset)
-                          # dataset=self.dataset) for i in range(1)])
+
         # DATASET EVAL
         self.dataset_instance_folder = '../data/cordeau/'
         self.inst_name = 'a' + str(self.nb_drivers) + '-' + str(self.nb_target)
@@ -305,97 +146,12 @@ class SupervisedTrainer():
         if self.supervision_function == 'nn':
             self.supervision = NNStrategy(reward_function=self.reward_function,
                                       env=self.env)
-        elif self.supervision_function == 'nnV2':
-            self.supervision = NNStrategyV2(reward_function=self.reward_function,
-                                      env=self.env)
-        # elif self.supervision_function == 'rf':
-        #     self.supervision = RFGenerator(params=objdict(vars(self)))
         else :
             raise ValueError('Could not find the supervision function demanded: '+ self.supervision_function)
 
         # Model Choice
-        if self.model=='MlpPolicy':
-            self.model = MlpPolicy
-        elif self.model=='MlpLstmPolicy':
-            self.model = MlpLstmPolicy
-        elif self.model=='Trans1':
-            self.model = globals()[self.model](src_vocab_size=1000,
-                                                 trg_vocab_size=self.nb_target + 1,
-                                                 max_length=self.nb_drivers+1,
-                                                 src_pad_idx=self.image_size,
-                                                 trg_pad_idx=self.image_size,
-                                                 dropout=self.dropout,
-                                                 device=self.device).to(self.device).double()
-        elif self.model=='Trans2':
-            self.model = globals()[self.model](src_vocab_size=1000,
-                                                 trg_vocab_size=self.nb_target + 1,
-                                                 max_length=self.nb_drivers+1,
-                                                 src_pad_idx=self.image_size,
-                                                 trg_pad_idx=self.image_size,
-                                                 dropout=self.dropout,
-                                                 num_layer=self.num_layer,
-                                                 heads=self.heads,
-                                                 forward_expansion=self.forward_expansion,
-                                                 extremas=self.env.extremas,
-                                                 device=self.device).to(self.device).double()
-        elif self.model=='Trans25':
-            self.model = globals()[self.model](src_vocab_size=1000,
-                                                 trg_vocab_size=1000,
-                                                 max_length=10,
-                                                 src_pad_idx=-1,
-                                                 trg_pad_idx=-1,
-                                                 dropout=self.dropout,
-                                                 num_layer=self.num_layer,
-                                                 heads=self.heads,
-                                                 forward_expansion=self.forward_expansion,
-                                                 extremas=self.env.extremas,
-                                                 device=self.device).to(self.device).double()
-        elif self.model=='Trans27':
-            self.model = globals()[self.model](src_vocab_size=50000,
-                                                 trg_vocab_size=self.nb_target + 1,
-                                                 max_length=10,
-                                                 src_pad_idx=-1,
-                                                 trg_pad_idx=-1,
-                                                 dropout=self.dropout,
-                                                 extremas=self.env.extremas,
-                                                 num_layers=self.num_layers,
-                                                 heads=self.heads,
-                                                 forward_expansion=self.forward_expansion,
-                                                 device=self.device,
-                                                 typ=self.typ).to(self.device).double()
-        elif self.model=='Trans28':
-            self.model = globals()[self.model](src_vocab_size=50000,
-                                                 trg_vocab_size=self.vocab_size + 1,
-                                                 max_length=self.nb_target*2 + self.nb_drivers + 1,
-                                                 src_pad_idx=-1,
-                                                 trg_pad_idx=-1,
-                                                 embed_size=self.embed_size,
-                                                 dropout=self.dropout,
-                                                 extremas=self.env.extremas,
-                                                 device=self.device,
-                                                 num_layers=self.num_layers,
-                                                 heads=self.heads,
-                                                 forward_expansion=self.forward_expansion,
-                                                 typ=self.emb_typ,
-                                                 max_time=int(self.env.time_end)).to(self.device).double()
-        elif self.model=='Trans17':
-            self.model = globals()[self.model](src_vocab_size=50000,
-                                                 trg_vocab_size=self.vocab_size + 1,
-                                                 max_length=self.nb_target*2 + self.nb_drivers + 1,
-                                                 src_pad_idx=-1,
-                                                 trg_pad_idx=-1,
-                                                 embed_size=self.embed_size,
-                                                 dropout=self.dropout,
-                                                 extremas=self.env.extremas,
-                                                 device=self.device,
-                                                 num_layers=self.num_layers,
-                                                 heads=self.heads,
-                                                 forward_expansion=self.forward_expansion,
-                                                 typ=self.emb_typ,
-                                                 max_time=int(self.env.time_end),
-                                                 encoder_bn=self.encoder_bn,
-                                                 decoder_bn=self.decoder_bn).to(self.device).double()
-        elif self.model=='Trans18':
+    
+        if self.model=='Trans18':
             self.model = globals()[self.model](src_vocab_size=50000,
                                                  trg_vocab_size=self.vocab_size + 1,
                                                  max_length=self.nb_target*2 + self.nb_drivers + 1,
@@ -413,28 +169,6 @@ class SupervisedTrainer():
                                                  classifier_type=self.classifier_type,
                                                  encoder_bn=self.encoder_bn,
                                                  decoder_bn=self.decoder_bn).to(self.device).double()
-        elif self.model=='Trans19':
-            self.model = globals()[self.model](src_vocab_size=50000,
-                                                 trg_vocab_size=self.vocab_size + 1,
-                                                 max_length=self.nb_target*2 + self.nb_drivers + 1,
-                                                 src_pad_idx=-1,
-                                                 trg_pad_idx=-1,
-                                                 embed_size=self.embed_size,
-                                                 dropout=self.dropout,
-                                                 extremas=self.env.extremas,
-                                                 device=self.device,
-                                                 num_layers=self.num_layers,
-                                                 heads=self.heads,
-                                                 forward_expansion=self.forward_expansion,
-                                                 typ=self.emb_typ,
-                                                 max_time=int(self.env.time_end),
-                                                 classifier_type=self.classifier_type,
-                                                 encoder_bn=self.encoder_bn,
-                                                 decoder_bn=self.decoder_bn,
-                                                 max_capacity=self.env.max_capacity,
-                                                 image_size=self.image_size,
-                                                 pretrain=self.pretrain,
-                                                 unfreezing_strat=self.unfreezing_strat).to(self.device).double()
         else :
             raise "self.model in PPOTrainer is not found"
 
@@ -447,16 +181,10 @@ class SupervisedTrainer():
             self.criterion = nn.CrossEntropyLoss()
         else :
             raise "Not found criterion"
+
         if self.pretrain :
             self.dist_criterion = nn.L1Loss()
             self.class_criterion = nn.CrossEntropyLoss()
-
-        # ic(self.model.parameters())
-        # for pa in self.model.parameters():
-        #     ic(pa)
-        # for chi in self.model.named_children():
-        #     ic(chi)
-        # exit()
 
         # optimizer
         if self.optimizer == 'Adam':
@@ -474,13 +202,13 @@ class SupervisedTrainer():
 
         # Checkpoint
         if self.checkpoint_dir :
-            print(' -- -- -- -- -- Loading  -- -- -- -- -- --')
+            ic(' -- -- -- -- -- Loading  -- -- -- -- -- --')
             if self.typ >= 40 :
                 self.model.load_state_dict(torch.load(self.rootdir + '/data/rl_experiments/' + self.checkpoint_dir).state_dict(), strict=False)
             else:
                 self.model.load_state_dict(torch.load(self.rootdir + '/data/rl_experiments/' + self.checkpoint_dir).state_dict())
-            print(' -- The model weights has been loaded ! --')
-            print(' -----------------------------------------')
+            ic(' -- The model weights has been loaded ! --')
+            ic(' -----------------------------------------')
 
         if self.rl < 10000:
             self.baseline_model = copy.deepcopy(self.model)
@@ -489,23 +217,15 @@ class SupervisedTrainer():
         self.testing_size = self.batch_size * (10000 // self.batch_size)    #About 10k
         self.training_size = self.batch_size * (100000 // self.batch_size)   #About 100k
 
-        # self.monitor = MonitorCallback(eval_env=self.eval_env,
-        #                               check_freq=self.monitor_freq,
-        #                               save_example_freq=self.example_freq,
-        #                               log_dir=self.path_name,
-        #                               n_eval_episodes=self.eval_episodes,
-        #                               verbose=self.verbose,
-        #                               sacred=self.sacred)
         self.current_epoch = 0
 
 
-        print(' *// What is this train about //* ')
+        ic(' *// What is this train about //* ')
         for item in vars(self):
             if item == "model":
                 vars(self)[item].summary()
             else :
-                print(item, ':', vars(self)[item])
-
+                ic(item, ':', vars(self)[item])
 
     def save_example(self, observations, rewards, number, time_step):
         noms = []
@@ -514,13 +234,8 @@ class SupervisedTrainer():
             os.makedirs(dir, exist_ok=True)
 
             for i, obs in enumerate(observations):
-                save_name = dir + '/' + str(i) + '_r=' + str(rewards[i]) + '.png'  #[np.array(img) for i, img in enumerate(images)
-                # if self.env.__class__.__name__ == 'DummyVecEnv':
-                #     image = self.norm_image(obs[0], scale=1)
-                # else :
-                #     image = self.norm_image(obs, scale=1)
+                save_name = dir + '/' + str(i) + '_r=' + str(rewards[i]) + '.png' 
                 image = obs
-                # print('SHae after image', np.shape(image))
                 imsave(save_name, image)
                 noms.append(save_name)
 
@@ -560,7 +275,7 @@ class SupervisedTrainer():
 
 
     def generate_supervision_data(self):
-        print('\t ** Generation Started **')
+        ic('\t ** Generation Started **')
         number_batch = self.data_size // self.batch_size
         size = number_batch * self.batch_size
         if self.datadir:
@@ -593,8 +308,8 @@ class SupervisedTrainer():
             # files_names = os.listdir(saving_name)
             # datasets = []
             # for file in files_names:
-            #     print('Datafile folder:', saving_name)
-            #     print(file)
+            #     ic('Datafile folder:', saving_name)
+            #     ic(file)
             #     datasets.append(torch.load(saving_name + file))
             # return ConcatDataset(datasets)
 
@@ -604,12 +319,8 @@ class SupervisedTrainer():
             return name
 
         if os.path.isdir(saving_name) :
-            print('This data is already out there !')
+            ic('This data is already out there !')
             dataset = load_dataset()
-            # for data in dataset:
-            #     o, a = data
-            #     action_counter[a] += 1
-            # self.criterion.weight = torch.from_numpy(action_counter).to(self.device)
             return dataset
         else :
             os.makedirs(saving_name)
@@ -632,7 +343,7 @@ class SupervisedTrainer():
                     data = data + sub_data
                     action_counter = action_counter + sub_action_counter
                 else :
-                    print('/!\ Found a non feasable solution. It is not saved')
+                    ic('/!\ Found a non feasable solution. It is not saved')
 
                 if sys.getsizeof(data) > 100000: #200k bytes.
                     last_save_size += len(data)
@@ -640,7 +351,7 @@ class SupervisedTrainer():
                     name = partial_name(len(data))
                     torch.save(train_data, name)
                     data = []
-                    print('Saving data status')
+                    ic('Saving data status')
 
                 observation = self.env.reset()
                 sub_data = []
@@ -656,13 +367,13 @@ class SupervisedTrainer():
             sub_action_counter[supervised_action-1] += 1
 
             if element % 1000 == 0:
-                print('Generating data... [{i}/{ii}] memorry:{m}'.format(i=last_save_size + len(data), ii=self.data_size, m=sys.getsizeof(data)))
+                ic('Generating data... [{i}/{ii}] memorry:{m}'.format(i=last_save_size + len(data), ii=self.data_size, m=sys.getsizeof(data)))
 
         train_data = SupervisionDataset(data, augment=self.augmentation, typ=self.typ)
         name = partial_name(len(data))
         torch.save(train_data, name)
 
-        print('Done Generating !')
+        ic('Done Generating !')
         self.criterion.weight = torch.from_numpy(action_counter).to(self.device)
         data = load_dataset()
         return data
@@ -741,13 +452,10 @@ class SupervisedTrainer():
                 target_tensor = world
             else :
                 target_tensor = world[1].unsqueeze(-1).type(torch.LongTensor).to(self.device)
-            # target_tensor = torch.tensor([0 for _ in range(self.batch_size)]).unsqueeze(-1).type(torch.LongTensor).to(self.device)
-            # coord_int = trans25_coord2int(positions[1][supervised_action])
             model_action = self.model(info_block,
                                       target_tensor,
                                       positions=positions,
                                       times=time_constraints)
-            # Typ > 40: model action (time, int)xd , (bool, dist, dist)xt
 
             supervised_action = supervised_action.to(self.device)
 
@@ -775,8 +483,8 @@ class SupervisedTrainer():
                 break
 
         acc = 100 * correct/total
-        print('-> Réussite: ', acc, '%')
-        print('-> Loss:', 100*running_loss/total)
+        ic('-> Réussite: ', acc, '%')
+        ic('-> Loss:', 100*running_loss/total)
         self.scheduler.step(running_loss)
         if self.pretrain :
             self.pretrain_log('Pretrain train',
@@ -794,202 +502,6 @@ class SupervisedTrainer():
                 series='Train accuracy', value=acc, iteration=self.current_epoch)
 
 
-    def generate_rl_data(self):
-        print(" - Generate ...")
-        size = self.batch_size
-        rl_actions = []
-        baseline_actions = []
-        rl_rewards = []
-        baseline_rewards = []
-        cathegorical_choices = []
-        final_data = []
-        step = 0
-        get_optimal_baseline = False ## FIXME ?
-        file_gen = DataFileGenerator(env=self.env, out_dir='../file_gen/', data_size=1)
-
-        # Generate a Memory batch
-        self.model.train()
-        self.baseline_model.eval()
-        # Number of episodes
-        while step < size:
-
-            instance_file_name = file_gen.generate_file(tmp_name='rl_instance')[0]
-            reward_function = globals()[self.reward_function]()
-            self.env = DarSeqEnv(size=self.image_size, target_population=self.nb_target, driver_population=self.nb_drivers,
-                                rep_type=self.rep_type, reward_function=reward_function, test_env=True, dataset=instance_file_name)
-            self.eval_env = DarSeqEnv(size=self.image_size, target_population=self.nb_target, driver_population=self.nb_drivers,
-                                      rep_type=self.rep_type, reward_function=reward_function, test_env=True, dataset=instance_file_name)
-
-            done = rl_done = baseline_done = False
-            baseline_observation = self.eval_env.reset()
-            rl_observation = self.env.reset()
-
-            if get_optimal_baseline:
-                baseline_done = True
-                solution_file = ''
-                fail_counter = 0
-                while not solution_file :
-                    if not self.verbose:
-                        sys.stdout = open('test_file.out', 'w')
-                    try :
-                        rf_time = time.time()
-                        solution_file, supervision_perf, l_bound = run_rf_algo('0')
-                        rf_time = time.time() - rf_time
-                        if not self.verbose :
-                            sys.stdout = sys.__stdout__
-                        if l_bound is None :
-                            print('Wrong solution ?')
-                            solution_file = ''
-                    except:
-                        if not self.verbose :
-                            sys.stdout = sys.__stdout__
-                        fail_counter += 1
-                        print('ERROR in RUN RF ALGO. PASSING THROUGH', fail_counter)
-                if math.isinf(l_bound) or math.isnan(l_bound) or l_bound is None :
-                    break;
-                baseline_rewards = [l_bound]
-
-            # Run a full episode
-            while not done :
-                # Pass in learning model
-                if not rl_done:
-                    world, targets, drivers, positions, time_contraints = rl_observation
-                    w_t = [torch.tensor([winfo],  dtype=torch.float64) for winfo in world]
-                    t_t = [[torch.tensor([tinfo], dtype=torch.float64 ) for tinfo in target] for target in targets]
-                    d_t = [[torch.tensor([dinfo],  dtype=torch.float64) for dinfo in driver] for driver in drivers]
-                    info_block = [w_t, t_t, d_t]
-
-                    positions = [torch.tensor([positions[0]], dtype=torch.float64),
-                                 [torch.tensor([position], dtype=torch.float64) for position in positions[1]],
-                                 [torch.tensor([position], dtype=torch.float64) for position in positions[2]]]
-
-                    time_contraints = [torch.tensor([time_contraints[0]], dtype=torch.float64),
-                                     [torch.tensor([time], dtype=torch.float64) for time in time_contraints[1]],
-                                     [torch.tensor([time], dtype=torch.float64) for time in time_contraints[2]]]
-
-                    if self.typ in [17, 18, 19]:
-                        target_tensor = torch.tensor(world).unsqueeze(-1).type(torch.LongTensor).to(self.device)
-                    else :
-                        target_tensor = torch.tensor([world[1]]).unsqueeze(-1).type(torch.LongTensor).to(self.device)
-                    rl_action = self.model(info_block,
-                                              target_tensor,
-                                              positions=positions,
-                                              times=time_contraints)
-                    bernouie_action = Categorical(softmax(rl_action)).sample()
-
-                    rl_observation, rl_reward, rl_done, info = self.env.step(bernouie_action)
-                    rl_actions.append(rl_action)
-                    cathegorical_choices.append(bernouie_action)
-                    rl_rewards.append(rl_reward)
-
-                # Pass in Baseline
-                if not baseline_done and not get_optimal_baseline:
-                    world, targets, drivers, positions, time_contraints = baseline_observation
-                    w_t = [torch.tensor([winfo],  dtype=torch.float64) for winfo in world]
-                    t_t = [[torch.tensor([tinfo], dtype=torch.float64 ) for tinfo in target] for target in targets]
-                    d_t = [[torch.tensor([dinfo],  dtype=torch.float64) for dinfo in driver] for driver in drivers]
-                    info_block = [w_t, t_t, d_t]
-
-                    positions = [torch.tensor([positions[0]], dtype=torch.float64),
-                                 [torch.tensor([position], dtype=torch.float64) for position in positions[1]],
-                                 [torch.tensor([position], dtype=torch.float64) for position in positions[2]]]
-
-                    time_contraints = [torch.tensor([time_contraints[0]], dtype=torch.float64),
-                                     [torch.tensor([time], dtype=torch.float64) for time in time_contraints[1]],
-                                     [torch.tensor([time], dtype=torch.float64) for time in time_contraints[2]]]
-
-                    if self.typ in [17, 18, 19]:
-                        target_tensor = torch.tensor(world).unsqueeze(-1).type(torch.LongTensor).to(self.device)
-                    else :
-                        target_tensor = torch.tensor([world[1]]).unsqueeze(-1).type(torch.LongTensor).to(self.device)
-                    baseline_action = self.baseline_model(info_block,
-                                              target_tensor,
-                                              positions=positions,
-                                              times=time_contraints)
-
-                    baseline_observation, baseline_reward, baseline_done, info = self.eval_env.step(baseline_action.squeeze(1).argmax(-1))
-                    baseline_rewards.append(baseline_reward)
-                    baseline_actions.append(baseline_action)
-
-                done = rl_done and baseline_done
-
-            print("WHILE LOOP DONE")
-            # Done with episode
-            cathegorical_choices = torch.stack(cathegorical_choices).squeeze()
-            sumLogProbOfActions = torch.log(softmax(torch.stack(rl_actions).squeeze(1)).gather(1, cathegorical_choices.unsqueeze(-1))).double()
-            sumLogProbOfActions = sumLogProbOfActions.squeeze().sum(0)
-            rl_rewards = torch.tensor(rl_rewards).sum(-1).to(self.device).double()
-            baseline_rewards = torch.tensor(baseline_rewards).sum(-1).to(self.device).double()
-
-            final_data.append([rl_rewards, baseline_rewards, sumLogProbOfActions])
-            rl_actions = []
-            baseline_actions = []
-            baseline_rewards = []
-            cathegorical_choices = []
-            rl_rewards = []
-            step += 1
-            print('Number of memoriesed episodes [{s} / {ss}]'.format(s=step, ss=size))
-
-        # Enough data has been collected
-        train_data = SupervisionDataset(final_data, typ=self.typ, augment=False)
-        print("RETURNING!!")
-        return train_data
-
-
-    def rl_train(self):
-        max_test_accuracy = 0
-        running_loss = 0
-        running_baseline = 0
-        running_reward = 0
-        total = 0
-        correct = nearest_accuracy = pointing_accuracy = 0
-
-        dataset = self.generate_rl_data() ## FIXME -> should create dataset by NN but uses RF
-        dataloader = DataLoader(dataset, batch_size=self.batch_size, shuffle=self.shuffle)
-
-        print("DATA LOADED")
-        self.model.train()
-        self.baseline_model.eval()
-        for i, data in enumerate(dataloader):
-            rl_reward, baseline_reward, sumLogProbOfActions = data
-
-            # loss = - torch.mean(reward.to(self.device) * softmax(model_action).log().sum(-1).to(self.device))
-
-            #loop:
-            #   idx = torch.argmax(prob_next_node, dim=1)
-            #   ProbOfChoices = prob_next_node[zero_to_bsz, idx]
-            #   sumLogProbOfActions.append( torch.log(ProbOfChoices) )
-            # sumLogProbOfActions = torch.stack(sumLogProbOfActions,dim=1).sum(dim=1)
-
-            # Obj: minimiser la distance  == maximiser la (-distance)=Reward
-            # dp - dm = positif -> minimiser
-            # - (dp - dm) = dm - dp = negatif -> maximiser
-            loss = torch.mean((baseline_reward - rl_reward) * sumLogProbOfActions )
-
-            ic(rl_reward, baseline_reward, sumLogProbOfActions)
-            ic(loss)
-
-            self.optimizer.zero_grad()
-            loss.backward()
-            self.optimizer.step()
-
-            running_reward += torch.mean(rl_reward).cpu().item()
-            running_baseline += torch.mean(baseline_reward).cpu().item()
-            total += rl_reward.size(0)
-            running_loss += loss.item()
-
-        acc = 100 * correct/total
-        print('-> Loss:', 100*running_loss/total)
-        self.scheduler.step(running_loss)
-
-        # if self.sacred :
-        #     self.sacred.get_logger().report_scalar(title='RL stats',
-        #         series='RL train loss', value=running_loss/total, iteration=self.current_epoch)
-        #     self.sacred.get_logger().report_scalar(title='RL stats',
-        #         series='Baseline reward', value=running_baseline/total, iteration=self.current_epoch)
-        #     self.sacred.get_logger().report_scalar(title='RL stats',
-        #         series='Training reward', value=running_reward/total, iteration=self.current_epoch)
-
     def load_partial_data(self):
         if len(self.dataset_names) > 10:
             part_size = len(self.dataset_names) // 20
@@ -999,7 +511,7 @@ class SupervisedTrainer():
             files_names = self.dataset_names
         datasets = []
         for file in files_names:
-            print('Datafile folder:', file)
+            ic('Datafile folder:', file)
             datasets.append(torch.load(file))
         self.partial_data_state += 1
         self.partial_data_state = self.partial_data_state % 10
@@ -1010,8 +522,8 @@ class SupervisedTrainer():
             # First time (generate) and get files names of the data
             if self.supervision_function == 'rf':
                 self.dataset_names = self.supervision.generate_dataset()
-            elif self.pretrain :
-                self.dataset_names = self.generate_supervision_data()
+            elif self.pretrain : #FIXME no differance
+                self.dataset_names = self.generate_supervision_data() 
             else :
                 self.dataset_names = self.generate_supervision_data()
 
@@ -1020,87 +532,8 @@ class SupervisedTrainer():
         dataset = self.load_partial_data()
 
         # Take care of the loaded dataset part to
-        if self.supervision_function == 'rf':
-            if self.balanced_dataset == 1 :
-                action_counter = np.zeros(self.vocab_size + 1)
-                data_list = []
-                for i in range(self.vocab_size + 1):
-                    data_list.append([])
-                for data in dataset:
-                    o, a = data
-                    action_counter[a] += 1
-                    data_list[a].append(data)
-
-                min_nb = int(min(action_counter[action_counter > 0]))
-                fin_data = []
-                for i in range(len(action_counter)):
-                    if action_counter[i] > 0:
-                        fin_data = fin_data + data_list[i][:min_nb]
-
-                dataset = SupervisionDataset(fin_data, augment=self.augmentation, typ=self.typ)
-
-            elif self.balanced_dataset == 2 :
-                # Over sampling method
-                action_counter = np.zeros(self.vocab_size + 1)
-                data_list = []
-                for i in range(self.vocab_size + 1):
-                    data_list.append([])
-                for data in dataset:
-                    o, a = data
-                    action_counter[a] += 1
-                    data_list[a].append(data)
-
-                min_nb = int(min(action_counter[action_counter > 0]))
-                max_nb = int(max(action_counter[action_counter > 0]))
-                fin_data = []
-                for i in range(len(action_counter)):
-                    if action_counter[i] < max_nb and action_counter[i] > 0:
-                        for j in range(int(max_nb/min_nb)) :
-                            fin_data = fin_data + data_list[i]
-                ic(len(fin_data))
-                ic(len(fin_data)/max_nb)
-                ic(len(action_counter))
-                dataset = SupervisionDataset(fin_data, augment=self.augmentation, typ=self.typ)
-
-            # If not balanced, weight the cross entropy respectivly to min_size/size
-            else :
-                action_counter = np.zeros(self.vocab_size + 1)
-                for data in dataset:
-                    o, a = data
-                    action_counter[a] += 1
-                min_nb = int(min(action_counter[action_counter > 0]))
-                max_nb = int(max(action_counter[action_counter > 0]))
-                action_counter[action_counter == 0] = min_nb
-                ic(min_nb/max_nb)
-                ic(max_nb/action_counter)
-                weights = max_nb/action_counter
-                if self.balanced_dataset == 3 :
-                    weights[0] = 0.5
-                elif self.balanced_dataset == 4 :
-                    weights[0] = 0.9
-                self.criterion.weight = torch.from_numpy(max_nb/action_counter).to(self.device)
-                dataset = SupervisionDataset(dataset, augment=self.augmentation, typ=self.typ)
-
-            # Divide the dataset into a validation and a training set.
-            dataset_size = len(dataset)
-            indices = list(range(dataset_size))
-            split = int(np.floor(0.1 * dataset_size))
-            # if self.shuffle and False :
-            #     np.random.shuffle(indices)
-            train_indices, val_indices = indices[split:], indices[:split]
-            if self.shuffle :
-                np.random.shuffle(train_indices)
-                np.random.shuffle(val_indices)
-
-            # Creating PT data samplers and loaders:
-            train_sampler = SubsetRandomSampler(train_indices)
-            valid_sampler = SubsetRandomSampler(val_indices)
-
-            supervision_data = torch.utils.data.DataLoader(dataset, batch_size=self.batch_size,
-                                                       sampler=train_sampler)
-            validation_data = torch.utils.data.DataLoader(dataset, batch_size=self.batch_size,
-                                                        sampler=valid_sampler)
-        elif self.pretrain :
+        action_counter = np.zeros(self.vocab_size + 1)
+        if self.pretrain :
             dataset_size = len(dataset)
             indices = list(range(dataset_size))
             split = int(np.floor(0.1 * dataset_size))
@@ -1120,12 +553,9 @@ class SupervisedTrainer():
                 action_counter[a] += 1
             self.criterion.weight = torch.from_numpy(action_counter).to(self.device)
             supervision_data = DataLoader(dataset, batch_size=self.batch_size, shuffle=self.shuffle)
-            validation_data = DataLoader([], batch_size=self.batch_size, shuffle=self.shuffle)
+            validation_data = DataLoader(dataset, batch_size=self.batch_size, shuffle=self.shuffle) #TODO it was empty
 
         return supervision_data,  validation_data
-
-
-
 
     def run(self):
         """
@@ -1134,45 +564,36 @@ class SupervisedTrainer():
             Train and evaluate
         """
         round_counter = 1e6 // (self.train_rounds -1)
-        print('\t ** Learning START ! **')
+        ic('\t ** Learning START ! **')
         for epoch in range(self.epochs):
             self.current_epoch = epoch
 
             # Train
-            if self.rl <= epoch:
-                self.supervision_function = ''
-                self.rl_train()
-            else :
-                # Every million visits update the dataset
-                if round_counter * self.batch_size * self.train_rounds > self.data_size // 20:
-                    if 'supervision_data' in locals():
-                        del supervision_data
-                        del validation_data
-                    supervision_data, validation_data = self.updating_data()
-                    round_counter = 0
-                self.train(supervision_data)
+            # Every million visits update the dataset
+            if round_counter * self.batch_size * self.train_rounds > self.data_size // 20:
+                if 'supervision_data' in locals():
+                    del supervision_data
+                    del validation_data
+                ic(epoch)
+                supervision_data, validation_data = self.updating_data() #FIXME always 
+                round_counter = 0
+            self.train(supervision_data)
+            # self.rl_train()
 
             # Evaluate
-            if self.supervision_function == 'rf':
-                if self.pretrain:
-                    self.offline_evaluation(validation_data, saving=True)
-                else :
-                    self.offline_evaluation(validation_data, saving=True)
-                    self.online_evaluation(full_test=True, supervision=False, saving=False)
-                    self.dataset_evaluation()
+            if self.pretrain:
+                self.offline_evaluation(validation_data, saving=True)
+            elif self.rl <= epoch:
+                ic(self.rl)
+                self.dataset_evaluation()
             else :
-                if self.pretrain:
-                    self.offline_evaluation(validation_data, saving=True)
-                elif self.rl <= epoch:
-                    self.dataset_evaluation()
-                else :
-                    self.online_evaluation()
-                    if self.dataset:
-                        self.online_evaluation(full_test=False)
+                self.online_evaluation()
+                if self.dataset:
+                    self.online_evaluation(full_test=False)
 
             round_counter +=1
 
-        print('\t ** Learning DONE ! **')
+        ic('\t ** Learning DONE ! **')
 
 
 
@@ -1204,10 +625,6 @@ class SupervisedTrainer():
                 world, targets, drivers, positions, time_constraints = observation
 
             info_block = [world, targets, drivers]
-            # Current player as trg elmt
-            # target_tensor = world[1].unsqueeze(-1).type(torch.LongTensor).to(self.device)
-            # target_tensor = torch.tensor([0 for _ in range(self.batch_size)]).unsqueeze(-1).type(torch.LongTensor).to(self.device)
-            # coord_int = trans25_coord2int(positions[1][supervised_action])
             if self.typ in [17, 18, 19]:
                 target_tensor = world
             else :
@@ -1267,9 +684,9 @@ class SupervisedTrainer():
         #Calculate metrics for each label, and find their unweighted mean. This does not take label imbalance into account.
         f1_metric2 = f1_score(y_sup, y_pred, average='macro')
 
-        print('\t-->' + eval_name + 'Réussite: ', eval_acc, '%')
-        print('\t-->' + eval_name + 'F1 :', f1_metric)
-        print('\t-->' + eval_name + 'Loss:', running_loss/total)
+        ic('\t-->' + eval_name + 'Réussite: ', eval_acc, '%')
+        ic('\t-->' + eval_name + 'F1 :', f1_metric)
+        ic('\t-->' + eval_name + 'Loss:', running_loss/total)
 
         # Model saving. Condition: Better accuracy and better loss
         if saving and full_test and (eval_acc > self.best_eval_metric[0] or ( eval_acc == self.best_eval_metric[0] and eval_loss <= self.best_eval_metric[1] )):
@@ -1280,8 +697,8 @@ class SupervisedTrainer():
             else :
                 model_name = self.path_name + '/models/model_offline' + str(self.current_epoch) + '.pt'
             os.makedirs(self.path_name + '/models/', exist_ok=True)
-            print('\t New Best Accuracy Model <3')
-            print('\tSaving as:', model_name)
+            ic('\t New Best Accuracy Model <3')
+            ic('\tSaving as:', model_name)
             torch.save(self.model, model_name)
 
             dir = self.path_name + '/example/'
@@ -1295,17 +712,17 @@ class SupervisedTrainer():
                                               local_path=save_name)
 
         # Statistics on clearml saving
-        # if self.sacred :
-        #     self.sacred.get_logger().report_scalar(title=eval_name,
-        #         series='reussite %', value=eval_acc, iteration=self.current_epoch)
-        #     self.sacred.get_logger().report_scalar(title=eval_name,
-        #         series='Loss', value=running_loss/total, iteration=self.current_epoch)
-        #     self.sacred.get_logger().report_scalar(title=eval_name,
-        #         series='F1 score weighted', value=f1_metric, iteration=self.current_epoch)
-        #     self.sacred.get_logger().report_scalar(title=eval_name,
-        #         series='F1 score micro', value=f1_metric1, iteration=self.current_epoch)
-        #     self.sacred.get_logger().report_scalar(title=eval_name,
-        #         series='F1 score macro', value=f1_metric2, iteration=self.current_epoch)
+        if self.sacred :
+            self.sacred.get_logger().report_scalar(title=eval_name,
+                series='reussite %', value=eval_acc, iteration=self.current_epoch)
+            self.sacred.get_logger().report_scalar(title=eval_name,
+                series='Loss', value=running_loss/total, iteration=self.current_epoch)
+            self.sacred.get_logger().report_scalar(title=eval_name,
+                series='F1 score weighted', value=f1_metric, iteration=self.current_epoch)
+            self.sacred.get_logger().report_scalar(title=eval_name,
+                series='F1 score micro', value=f1_metric1, iteration=self.current_epoch)
+            self.sacred.get_logger().report_scalar(title=eval_name,
+                series='F1 score macro', value=f1_metric2, iteration=self.current_epoch)
             # self.sacred.get_logger().report_scalar(title=eval_name,
             #     series='Fit solution %', value=100*fit_sol/self.eval_episodes, iteration=self.current_epoch)
             # self.sacred.get_logger().report_scalar(title=eval_name,
@@ -1316,7 +733,7 @@ class SupervisedTrainer():
             #     series='Step Reward', value=total_reward/total, iteration=self.current_epoch)
 
     def dataset_evaluation(self):
-        print('\t** ON DATASET :', self.inst_name, '**')
+        ic('\t** ON DATASET :', self.inst_name, '**')
         eval_name = 'Dataset Test'
         done = False
         observation = self.dataset_env.reset()
@@ -1357,37 +774,37 @@ class SupervisedTrainer():
             total_reward += reward
 
         if info['fit_solution'] and info['GAP'] < self.best_eval_metric[2] :
-            print('/-- NEW BEST GAP SOLUTION --\\')
-            print('/-- GAP:', info['GAP'])
+            ic('/-- NEW BEST GAP SOLUTION --\\')
+            ic('/-- GAP:', info['GAP'])
             self.best_eval_metric[2] = info['GAP']
             if self.checkpoint_type == 'best':
                 model_name = self.path_name + '/models/best_GAP_model.pt'
             else :
                 model_name = self.path_name + '/models/GAP_model_' + str(self.current_epoch) + '.pt'
-            print('\tSaving as:', model_name)
+            ic('\tSaving as:', model_name)
             os.makedirs(self.path_name + '/models/', exist_ok=True)
             torch.save(self.model, model_name)
 
-        print('/- Fit solution:', info['fit_solution'])
-        print('/- with ',info['delivered'], 'deliveries')
+        ic('/- Fit solution:', info['fit_solution'])
+        ic('/- with ',info['delivered'], 'deliveries')
         if info['fit_solution'] :
-            print('/- GAP to optimal solution: ', info['GAP'], '(counts only if fit solution)')
-        print('/- Optim Total distance:', self.dataset_env.best_cost)
-        print('/- Model Total distance:', self.dataset_env.total_distance)
+            ic('/- GAP to optimal solution: ', info['GAP'], '(counts only if fit solution)')
+        ic('/- Optim Total distance:', self.dataset_env.best_cost)
+        ic('/- Model Total distance:', self.dataset_env.total_distance)
 
-        # if self.sacred :
-        #     self.sacred.get_logger().report_scalar(title=eval_name,
-        #         series='Fit solution', value=info['fit_solution'], iteration=self.current_epoch)
-        #     self.sacred.get_logger().report_scalar(title=eval_name,
-        #         series='Delivered', value=info['delivered'], iteration=self.current_epoch)
-        #     if info['fit_solution'] > 0:
-        #         self.sacred.get_logger().report_scalar(title=eval_name,
-        #             series='Average gap', value=info['GAP'], iteration=self.current_epoch)
-        #     else :
-        #         self.sacred.get_logger().report_scalar(title=eval_name,
-        #             series='Average gap', value=300, iteration=self.current_epoch)
-        #     self.sacred.get_logger().report_scalar(title=eval_name,
-        #         series='Total Reward', value=total_reward, iteration=self.current_epoch)
+        if self.sacred :
+            self.sacred.get_logger().report_scalar(title=eval_name,
+                series='Fit solution', value=info['fit_solution'], iteration=self.current_epoch)
+            self.sacred.get_logger().report_scalar(title=eval_name,
+                series='Delivered', value=info['delivered'], iteration=self.current_epoch)
+            if info['fit_solution'] > 0:
+                self.sacred.get_logger().report_scalar(title=eval_name,
+                    series='Average gap', value=info['GAP'], iteration=self.current_epoch)
+            else :
+                self.sacred.get_logger().report_scalar(title=eval_name,
+                    series='Average gap', value=300, iteration=self.current_epoch)
+            self.sacred.get_logger().report_scalar(title=eval_name,
+                series='Total Reward', value=total_reward, iteration=self.current_epoch)
 
 
     def online_evaluation(self, full_test=True, supervision=True, saving=True):
@@ -1409,13 +826,6 @@ class SupervisedTrainer():
         for eval_step in range(self.eval_episodes):
 
             # Generate solution and evironement instance.
-            if self.supervision_function == 'rf' :
-                file_gen = DataFileGenerator(env=self.eval_env, out_dir='../online_eval/DARP_cordeau/', data_size=1)
-                instance_file_name = file_gen.generate_file(tmp_name='eval_instance')[0]
-                reward_function = globals()[self.reward_function]()
-                self.eval_env = DarSeqEnv(size=self.image_size, target_population=self.nb_target, driver_population=self.nb_drivers,
-                                          rep_type=self.rep_type, reward_function=reward_function, test_env=True, dataset=instance_file_name)
-
             done = False
             observation = self.eval_env.reset()
 
@@ -1491,31 +901,8 @@ class SupervisedTrainer():
                         to_save.append(self.eval_env.get_image_representation())
                     save_rewards.append(reward)
             # Env is done
-
-            if self.supervision_function == 'rf' :
-                if info['fit_solution']:
-                    # Get a solution from the supervision
-                    solution_file = ''
-                    while not solution_file :
-                        if not self.verbose:
-                            sys.stdout = open('test_file.out', 'w')
-                        try :
-                            rf_time = time.time()
-                            solution_file, supervision_perf, l_bound = run_rf_algo('0')
-                            rf_time = time.time() - rf_time
-                            if not self.verbose :
-                                sys.stdout = sys.__stdout__
-                            if l_bound is None :
-                                print('Wrong solution ?')
-                                solution_file = ''
-                        except:
-                            if not self.verbose :
-                                sys.stdout = sys.__stdout__
-                            print('ERROR in RUN RF ALGO. PASSING THROUGH')
-                    gap += self.eval_env.get_GAP(best_cost=l_bound)
-            else :
                 # If not rf supervision
-                gap += info['GAP']
+            gap += info['GAP']
 
             fit_sol += info['fit_solution'] #self.eval_env.is_fit_solution()
             delivered += info['delivered']
@@ -1524,11 +911,11 @@ class SupervisedTrainer():
         eval_acc = 100 * correct/total
         eval_loss = running_loss/total
 
-        print('\t-->' + eval_name + 'Réussite: ', eval_acc, '%')
-        print('\t-->' + eval_name + 'Loss:', running_loss/total)
-        print('\t-->' + eval_name + 'Fit solution: ', 100*fit_sol/self.eval_episodes, '%')
-        print('\t-->' + eval_name + 'Average delivered', delivered/self.eval_episodes)
-        print('\t-->' + eval_name + 'Step Reward ', total_reward/total)
+        ic('\t-->' + eval_name + 'Réussite: ', eval_acc, '%')
+        ic('\t-->' + eval_name + 'Loss:', running_loss/total)
+        ic('\t-->' + eval_name + 'Fit solution: ', 100*fit_sol/self.eval_episodes, '%')
+        ic('\t-->' + eval_name + 'Average delivered', delivered/self.eval_episodes)
+        ic('\t-->' + eval_name + 'Step Reward ', total_reward/total)
 
         # Model saving. Condition: Better accuracy and better loss
         if fit_sol > 0 and gap < self.best_eval_metric[3] :
@@ -1538,8 +925,8 @@ class SupervisedTrainer():
             else :
                 model_name = self.path_name + '/models/model_online' + str(self.current_epoch) + '.pt'
             os.makedirs(self.path_name + '/models/', exist_ok=True)
-            print('\t New Best online GAP Model <3')
-            print('\tSaving as:', model_name)
+            ic('\t New Best online GAP Model <3')
+            ic('\tSaving as:', model_name)
             torch.save(self.model, model_name)
 
             # Saving an example
@@ -1550,24 +937,25 @@ class SupervisedTrainer():
 
 
         # Statistics on clearml saving
-        # if self.sacred :
-        #     self.sacred.get_logger().report_scalar(title=eval_name,
-        #         series='reussite %', value=eval_acc, iteration=self.current_epoch)
-        #     self.sacred.get_logger().report_scalar(title=eval_name,
-        #         series='Loss', value=running_loss/total, iteration=self.current_epoch)
-        #     self.sacred.get_logger().report_scalar(title=eval_name,
-        #         series='Fit solution %', value=100*fit_sol/self.eval_episodes, iteration=self.current_epoch)
-        #     self.sacred.get_logger().report_scalar(title=eval_name,
-        #         series='Average delivered', value=delivered/self.eval_episodes, iteration=self.current_epoch)
-        #     if self.supervision_function == 'rf' :
-        #         if fit_sol > 0:
-        #             self.sacred.get_logger().report_scalar(title=eval_name,
-        #                 series='Average gap', value=gap/fit_sol, iteration=self.current_epoch)
-        #         else :
-        #             self.sacred.get_logger().report_scalar(title=eval_name,
-        #                 series='Average gap', value=300, iteration=self.current_epoch)
-        #     else :
-        #         self.sacred.get_logger().report_scalar(title=eval_name,
-        #             series='Average gap', value=gap/self.eval_episodes, iteration=self.current_epoch)
-        #     self.sacred.get_logger().report_scalar(title=eval_name,
-        #         series='Step Reward', value=total_reward/total, iteration=self.current_epoch)
+        if self.sacred :
+            self.sacred.get_logger().report_scalar(title=eval_name,
+                series='reussite %', value=eval_acc, iteration=self.current_epoch)
+            self.sacred.get_logger().report_scalar(title=eval_name,
+                series='Loss', value=running_loss/total, iteration=self.current_epoch)
+            self.sacred.get_logger().report_scalar(title=eval_name,
+                series='Fit solution %', value=100*fit_sol/self.eval_episodes, iteration=self.current_epoch)
+            self.sacred.get_logger().report_scalar(title=eval_name,
+                series='Average delivered', value=delivered/self.eval_episodes, iteration=self.current_epoch)
+            if self.supervision_function == 'rf' :
+                if fit_sol > 0:
+                    self.sacred.get_logger().report_scalar(title=eval_name,
+                        series='Average gap', value=gap/fit_sol, iteration=self.current_epoch)
+                else :
+                    self.sacred.get_logger().report_scalar(title=eval_name,
+                        series='Average gap', value=300, iteration=self.current_epoch)
+            else :
+                self.sacred.get_logger().report_scalar(title=eval_name,
+                    series='Average gap', value=gap/self.eval_episodes, iteration=self.current_epoch)
+            self.sacred.get_logger().report_scalar(title=eval_name,
+                series='Step Reward', value=total_reward/total, iteration=self.current_epoch)
+

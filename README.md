@@ -14,3 +14,11 @@ Run Nearest Neighbour strategy on the smallest instance of cordeau:
 cd darp
 python3 run.py
 ```
+
+Init clearml
+```
+clearml-init
+```
+Then follow instructions
+
+Alternatively copy clearml.conf to your home directory 
