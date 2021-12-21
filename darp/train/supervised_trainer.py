@@ -38,7 +38,6 @@ from generator import DataFileGenerator #, RFGenerator
 # from dialRL.strategies.external.darp_rf.run_rf_algo import run_rf_algo
 
 
-
 torch.autograd.set_detect_anomaly(True)
 # os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # FATAL
 # logging.getLogger('tensorflow').setLevel(logging.FATAL)
@@ -49,7 +48,7 @@ torch.autograd.set_detect_anomaly(True)
 
 
 class SupervisedTrainer():
-    def __init__(self, flags, sacred=None):
+    def __init__(self, flags, sacred=True):
         ''' Inintialisation of the trainner:
                 Entends to load all the correct set up, ready to train
         '''
@@ -63,11 +62,11 @@ class SupervisedTrainer():
             self.path_name = '/'.join([self.sacred.experiment_info['base_dir'], self.file_dir, str(self.sacred._id)])
         else :
             self.path_name = self.rootdir + '/data/rl_experiments/' + self.alias + time.strftime("%d-%H-%M") + '_typ' + str(self.typ)
-            print(' ** Saving train path: ', self.path_name)
+            ic(' ** Saving train path: ', self.path_name)
             if not os.path.exists(self.path_name):
                 os.makedirs(self.path_name, exist_ok=True)
             else :
-                print(' Already such a path.. adding random seed')
+                ic(' Already such a path.. adding random seed')
                 self.path_name = self.path_name + '#' + str(torch.randint(0, 10000, [1]).item())
                 os.makedirs(self.path_name, exist_ok=True)
 
@@ -204,13 +203,13 @@ class SupervisedTrainer():
 
         # Checkpoint
         if self.checkpoint_dir :
-            print(' -- -- -- -- -- Loading  -- -- -- -- -- --')
+            ic(' -- -- -- -- -- Loading  -- -- -- -- -- --')
             if self.typ >= 40 :
                 self.model.load_state_dict(torch.load(self.rootdir + '/data/rl_experiments/' + self.checkpoint_dir).state_dict(), strict=False)
             else:
                 self.model.load_state_dict(torch.load(self.rootdir + '/data/rl_experiments/' + self.checkpoint_dir).state_dict())
-            print(' -- The model weights has been loaded ! --')
-            print(' -----------------------------------------')
+            ic(' -- The model weights has been loaded ! --')
+            ic(' -----------------------------------------')
 
         if self.rl < 10000:
             self.baseline_model = copy.deepcopy(self.model)
@@ -222,12 +221,12 @@ class SupervisedTrainer():
         self.current_epoch = 0
 
 
-        print(' *// What is this train about //* ')
+        ic(' *// What is this train about //* ')
         for item in vars(self):
             if item == "model":
                 vars(self)[item].summary()
             else :
-                print(item, ':', vars(self)[item])
+                ic(item, ':', vars(self)[item])
 
     def save_example(self, observations, rewards, number, time_step):
         noms = []
@@ -277,7 +276,7 @@ class SupervisedTrainer():
 
 
     def generate_supervision_data(self):
-        print('\t ** Generation Started **')
+        ic('\t ** Generation Started **')
         number_batch = self.data_size // self.batch_size
         size = number_batch * self.batch_size
         if self.datadir:
@@ -310,8 +309,8 @@ class SupervisedTrainer():
             # files_names = os.listdir(saving_name)
             # datasets = []
             # for file in files_names:
-            #     print('Datafile folder:', saving_name)
-            #     print(file)
+            #     ic('Datafile folder:', saving_name)
+            #     ic(file)
             #     datasets.append(torch.load(saving_name + file))
             # return ConcatDataset(datasets)
 
@@ -321,7 +320,7 @@ class SupervisedTrainer():
             return name
 
         if os.path.isdir(saving_name) :
-            print('This data is already out there !')
+            ic('This data is already out there !')
             dataset = load_dataset()
             return dataset
         else :
@@ -345,7 +344,7 @@ class SupervisedTrainer():
                     data = data + sub_data
                     action_counter = action_counter + sub_action_counter
                 else :
-                    print('/!\ Found a non feasable solution. It is not saved')
+                    ic('/!\ Found a non feasable solution. It is not saved')
 
                 if sys.getsizeof(data) > 100000: #200k bytes.
                     last_save_size += len(data)
@@ -353,7 +352,7 @@ class SupervisedTrainer():
                     name = partial_name(len(data))
                     torch.save(train_data, name)
                     data = []
-                    print('Saving data status')
+                    ic('Saving data status')
 
                 observation = self.env.reset()
                 sub_data = []
@@ -369,13 +368,13 @@ class SupervisedTrainer():
             sub_action_counter[supervised_action-1] += 1
 
             if element % 1000 == 0:
-                print('Generating data... [{i}/{ii}] memorry:{m}'.format(i=last_save_size + len(data), ii=self.data_size, m=sys.getsizeof(data)))
+                ic('Generating data... [{i}/{ii}] memorry:{m}'.format(i=last_save_size + len(data), ii=self.data_size, m=sys.getsizeof(data)))
 
         train_data = SupervisionDataset(data, augment=self.augmentation, typ=self.typ)
         name = partial_name(len(data))
         torch.save(train_data, name)
 
-        print('Done Generating !')
+        ic('Done Generating !')
         self.criterion.weight = torch.from_numpy(action_counter).to(self.device)
         data = load_dataset()
         return data
@@ -485,8 +484,8 @@ class SupervisedTrainer():
                 break
 
         acc = 100 * correct/total
-        print('-> Réussite: ', acc, '%')
-        print('-> Loss:', 100*running_loss/total)
+        ic('-> Réussite: ', acc, '%')
+        ic('-> Loss:', 100*running_loss/total)
         self.scheduler.step(running_loss)
         if self.pretrain :
             self.pretrain_log('Pretrain train',
@@ -513,7 +512,7 @@ class SupervisedTrainer():
             files_names = self.dataset_names
         datasets = []
         for file in files_names:
-            print('Datafile folder:', file)
+            ic('Datafile folder:', file)
             datasets.append(torch.load(file))
         self.partial_data_state += 1
         self.partial_data_state = self.partial_data_state % 10
@@ -566,7 +565,7 @@ class SupervisedTrainer():
             Train and evaluate
         """
         round_counter = 1e6 // (self.train_rounds -1)
-        print('\t ** Learning START ! **')
+        ic('\t ** Learning START ! **')
         for epoch in range(self.epochs):
             self.current_epoch = epoch
 
@@ -580,28 +579,22 @@ class SupervisedTrainer():
                 supervision_data, validation_data = self.updating_data() #FIXME always 
                 round_counter = 0
             self.train(supervision_data)
+            # self.rl_train()
 
             # Evaluate
-            if self.supervision_function == 'rf':
-                if self.pretrain:
-                    self.offline_evaluation(validation_data, saving=True)
-                else :
-                    self.offline_evaluation(validation_data, saving=True)
-                    self.online_evaluation(full_test=True, supervision=False, saving=False)
-                    self.dataset_evaluation()
+            if self.pretrain:
+                self.offline_evaluation(validation_data, saving=True)
+            elif self.rl <= epoch:
+                ic(self.rl)
+                self.dataset_evaluation()
             else :
-                if self.pretrain:
-                    self.offline_evaluation(validation_data, saving=True)
-                elif self.rl <= epoch:
-                    self.dataset_evaluation()
-                else :
-                    self.online_evaluation()
-                    if self.dataset:
-                        self.online_evaluation(full_test=False)
+                self.online_evaluation()
+                if self.dataset:
+                    self.online_evaluation(full_test=False)
 
             round_counter +=1
 
-        print('\t ** Learning DONE ! **')
+        ic('\t ** Learning DONE ! **')
 
 
 
@@ -692,9 +685,9 @@ class SupervisedTrainer():
         #Calculate metrics for each label, and find their unweighted mean. This does not take label imbalance into account.
         f1_metric2 = f1_score(y_sup, y_pred, average='macro')
 
-        print('\t-->' + eval_name + 'Réussite: ', eval_acc, '%')
-        print('\t-->' + eval_name + 'F1 :', f1_metric)
-        print('\t-->' + eval_name + 'Loss:', running_loss/total)
+        ic('\t-->' + eval_name + 'Réussite: ', eval_acc, '%')
+        ic('\t-->' + eval_name + 'F1 :', f1_metric)
+        ic('\t-->' + eval_name + 'Loss:', running_loss/total)
 
         # Model saving. Condition: Better accuracy and better loss
         if saving and full_test and (eval_acc > self.best_eval_metric[0] or ( eval_acc == self.best_eval_metric[0] and eval_loss <= self.best_eval_metric[1] )):
@@ -705,8 +698,8 @@ class SupervisedTrainer():
             else :
                 model_name = self.path_name + '/models/model_offline' + str(self.current_epoch) + '.pt'
             os.makedirs(self.path_name + '/models/', exist_ok=True)
-            print('\t New Best Accuracy Model <3')
-            print('\tSaving as:', model_name)
+            ic('\t New Best Accuracy Model <3')
+            ic('\tSaving as:', model_name)
             torch.save(self.model, model_name)
 
             dir = self.path_name + '/example/'
@@ -720,17 +713,17 @@ class SupervisedTrainer():
                                               local_path=save_name)
 
         # Statistics on clearml saving
-        # if self.sacred :
-        #     self.sacred.get_logger().report_scalar(title=eval_name,
-        #         series='reussite %', value=eval_acc, iteration=self.current_epoch)
-        #     self.sacred.get_logger().report_scalar(title=eval_name,
-        #         series='Loss', value=running_loss/total, iteration=self.current_epoch)
-        #     self.sacred.get_logger().report_scalar(title=eval_name,
-        #         series='F1 score weighted', value=f1_metric, iteration=self.current_epoch)
-        #     self.sacred.get_logger().report_scalar(title=eval_name,
-        #         series='F1 score micro', value=f1_metric1, iteration=self.current_epoch)
-        #     self.sacred.get_logger().report_scalar(title=eval_name,
-        #         series='F1 score macro', value=f1_metric2, iteration=self.current_epoch)
+        if self.sacred :
+            self.sacred.get_logger().report_scalar(title=eval_name,
+                series='reussite %', value=eval_acc, iteration=self.current_epoch)
+            self.sacred.get_logger().report_scalar(title=eval_name,
+                series='Loss', value=running_loss/total, iteration=self.current_epoch)
+            self.sacred.get_logger().report_scalar(title=eval_name,
+                series='F1 score weighted', value=f1_metric, iteration=self.current_epoch)
+            self.sacred.get_logger().report_scalar(title=eval_name,
+                series='F1 score micro', value=f1_metric1, iteration=self.current_epoch)
+            self.sacred.get_logger().report_scalar(title=eval_name,
+                series='F1 score macro', value=f1_metric2, iteration=self.current_epoch)
             # self.sacred.get_logger().report_scalar(title=eval_name,
             #     series='Fit solution %', value=100*fit_sol/self.eval_episodes, iteration=self.current_epoch)
             # self.sacred.get_logger().report_scalar(title=eval_name,
@@ -741,7 +734,7 @@ class SupervisedTrainer():
             #     series='Step Reward', value=total_reward/total, iteration=self.current_epoch)
 
     def dataset_evaluation(self):
-        print('\t** ON DATASET :', self.inst_name, '**')
+        ic('\t** ON DATASET :', self.inst_name, '**')
         eval_name = 'Dataset Test'
         done = False
         observation = self.dataset_env.reset()
@@ -782,37 +775,37 @@ class SupervisedTrainer():
             total_reward += reward
 
         if info['fit_solution'] and info['GAP'] < self.best_eval_metric[2] :
-            print('/-- NEW BEST GAP SOLUTION --\\')
-            print('/-- GAP:', info['GAP'])
+            ic('/-- NEW BEST GAP SOLUTION --\\')
+            ic('/-- GAP:', info['GAP'])
             self.best_eval_metric[2] = info['GAP']
             if self.checkpoint_type == 'best':
                 model_name = self.path_name + '/models/best_GAP_model.pt'
             else :
                 model_name = self.path_name + '/models/GAP_model_' + str(self.current_epoch) + '.pt'
-            print('\tSaving as:', model_name)
+            ic('\tSaving as:', model_name)
             os.makedirs(self.path_name + '/models/', exist_ok=True)
             torch.save(self.model, model_name)
 
-        print('/- Fit solution:', info['fit_solution'])
-        print('/- with ',info['delivered'], 'deliveries')
+        ic('/- Fit solution:', info['fit_solution'])
+        ic('/- with ',info['delivered'], 'deliveries')
         if info['fit_solution'] :
-            print('/- GAP to optimal solution: ', info['GAP'], '(counts only if fit solution)')
-        print('/- Optim Total distance:', self.dataset_env.best_cost)
-        print('/- Model Total distance:', self.dataset_env.total_distance)
+            ic('/- GAP to optimal solution: ', info['GAP'], '(counts only if fit solution)')
+        ic('/- Optim Total distance:', self.dataset_env.best_cost)
+        ic('/- Model Total distance:', self.dataset_env.total_distance)
 
-        # if self.sacred :
-        #     self.sacred.get_logger().report_scalar(title=eval_name,
-        #         series='Fit solution', value=info['fit_solution'], iteration=self.current_epoch)
-        #     self.sacred.get_logger().report_scalar(title=eval_name,
-        #         series='Delivered', value=info['delivered'], iteration=self.current_epoch)
-        #     if info['fit_solution'] > 0:
-        #         self.sacred.get_logger().report_scalar(title=eval_name,
-        #             series='Average gap', value=info['GAP'], iteration=self.current_epoch)
-        #     else :
-        #         self.sacred.get_logger().report_scalar(title=eval_name,
-        #             series='Average gap', value=300, iteration=self.current_epoch)
-        #     self.sacred.get_logger().report_scalar(title=eval_name,
-        #         series='Total Reward', value=total_reward, iteration=self.current_epoch)
+        if self.sacred :
+            self.sacred.get_logger().report_scalar(title=eval_name,
+                series='Fit solution', value=info['fit_solution'], iteration=self.current_epoch)
+            self.sacred.get_logger().report_scalar(title=eval_name,
+                series='Delivered', value=info['delivered'], iteration=self.current_epoch)
+            if info['fit_solution'] > 0:
+                self.sacred.get_logger().report_scalar(title=eval_name,
+                    series='Average gap', value=info['GAP'], iteration=self.current_epoch)
+            else :
+                self.sacred.get_logger().report_scalar(title=eval_name,
+                    series='Average gap', value=300, iteration=self.current_epoch)
+            self.sacred.get_logger().report_scalar(title=eval_name,
+                series='Total Reward', value=total_reward, iteration=self.current_epoch)
 
 
     def online_evaluation(self, full_test=True, supervision=True, saving=True):
@@ -919,11 +912,11 @@ class SupervisedTrainer():
         eval_acc = 100 * correct/total
         eval_loss = running_loss/total
 
-        print('\t-->' + eval_name + 'Réussite: ', eval_acc, '%')
-        print('\t-->' + eval_name + 'Loss:', running_loss/total)
-        print('\t-->' + eval_name + 'Fit solution: ', 100*fit_sol/self.eval_episodes, '%')
-        print('\t-->' + eval_name + 'Average delivered', delivered/self.eval_episodes)
-        print('\t-->' + eval_name + 'Step Reward ', total_reward/total)
+        ic('\t-->' + eval_name + 'Réussite: ', eval_acc, '%')
+        ic('\t-->' + eval_name + 'Loss:', running_loss/total)
+        ic('\t-->' + eval_name + 'Fit solution: ', 100*fit_sol/self.eval_episodes, '%')
+        ic('\t-->' + eval_name + 'Average delivered', delivered/self.eval_episodes)
+        ic('\t-->' + eval_name + 'Step Reward ', total_reward/total)
 
         # Model saving. Condition: Better accuracy and better loss
         if fit_sol > 0 and gap < self.best_eval_metric[3] :
@@ -933,8 +926,8 @@ class SupervisedTrainer():
             else :
                 model_name = self.path_name + '/models/model_online' + str(self.current_epoch) + '.pt'
             os.makedirs(self.path_name + '/models/', exist_ok=True)
-            print('\t New Best online GAP Model <3')
-            print('\tSaving as:', model_name)
+            ic('\t New Best online GAP Model <3')
+            ic('\tSaving as:', model_name)
             torch.save(self.model, model_name)
 
             # Saving an example
@@ -945,24 +938,25 @@ class SupervisedTrainer():
 
 
         # Statistics on clearml saving
-        # if self.sacred :
-        #     self.sacred.get_logger().report_scalar(title=eval_name,
-        #         series='reussite %', value=eval_acc, iteration=self.current_epoch)
-        #     self.sacred.get_logger().report_scalar(title=eval_name,
-        #         series='Loss', value=running_loss/total, iteration=self.current_epoch)
-        #     self.sacred.get_logger().report_scalar(title=eval_name,
-        #         series='Fit solution %', value=100*fit_sol/self.eval_episodes, iteration=self.current_epoch)
-        #     self.sacred.get_logger().report_scalar(title=eval_name,
-        #         series='Average delivered', value=delivered/self.eval_episodes, iteration=self.current_epoch)
-        #     if self.supervision_function == 'rf' :
-        #         if fit_sol > 0:
-        #             self.sacred.get_logger().report_scalar(title=eval_name,
-        #                 series='Average gap', value=gap/fit_sol, iteration=self.current_epoch)
-        #         else :
-        #             self.sacred.get_logger().report_scalar(title=eval_name,
-        #                 series='Average gap', value=300, iteration=self.current_epoch)
-        #     else :
-        #         self.sacred.get_logger().report_scalar(title=eval_name,
-        #             series='Average gap', value=gap/self.eval_episodes, iteration=self.current_epoch)
-        #     self.sacred.get_logger().report_scalar(title=eval_name,
-        #         series='Step Reward', value=total_reward/total, iteration=self.current_epoch)
+        if self.sacred :
+            self.sacred.get_logger().report_scalar(title=eval_name,
+                series='reussite %', value=eval_acc, iteration=self.current_epoch)
+            self.sacred.get_logger().report_scalar(title=eval_name,
+                series='Loss', value=running_loss/total, iteration=self.current_epoch)
+            self.sacred.get_logger().report_scalar(title=eval_name,
+                series='Fit solution %', value=100*fit_sol/self.eval_episodes, iteration=self.current_epoch)
+            self.sacred.get_logger().report_scalar(title=eval_name,
+                series='Average delivered', value=delivered/self.eval_episodes, iteration=self.current_epoch)
+            if self.supervision_function == 'rf' :
+                if fit_sol > 0:
+                    self.sacred.get_logger().report_scalar(title=eval_name,
+                        series='Average gap', value=gap/fit_sol, iteration=self.current_epoch)
+                else :
+                    self.sacred.get_logger().report_scalar(title=eval_name,
+                        series='Average gap', value=300, iteration=self.current_epoch)
+            else :
+                self.sacred.get_logger().report_scalar(title=eval_name,
+                    series='Average gap', value=gap/self.eval_episodes, iteration=self.current_epoch)
+            self.sacred.get_logger().report_scalar(title=eval_name,
+                series='Step Reward', value=total_reward/total, iteration=self.current_epoch)
+
