@@ -35,7 +35,7 @@ class DarSeqEnv(DarEnv):
         self.max_capacity = max_capacity
         self.max_ride_time = max_ride_time
         self.service_time = service_time
-        if self.dataset :
+        if self.dataset:
             self.max_step = time_end * 3
             self.best_cost = tabu_parse_best(self.dataset)
             if self.test_env :
@@ -44,6 +44,7 @@ class DarSeqEnv(DarEnv):
             else :
                 # Get info from dataset, to construct artificial data with those parameters
                 super(DarSeqEnv, self).__init__(size, target_population, driver_population, time_end=time_end, max_step=self.max_step)
+
                 self.extremas, self.target_population, self.driver_population, self.time_end, self.depot_position, self.size, self.time_limit, self.max_capacity, self.max_ride_time, self.service_time = tabu_parse_info(self.dataset)
 
         else :
@@ -697,7 +698,7 @@ class DarSeqEnv(DarEnv):
         if self.current_step >= self.max_step or self.time_step >= self.time_end :
             done = True
         if self.aiming_loop_nb > self.driver_population + 1:
-            print('/!\ Avorted simulation. Looping on same action, without success - The action is:', action)
+            print('/!\ Aborted simulation. Looping on same action, without success - The action is:', action)
             done = True
 
         reward = self.reward_function.compute(self.distance, done, self)

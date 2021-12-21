@@ -3,6 +3,42 @@ import drawSvg as draw
 import matplotlib.pyplot as plt
 import numpy as np
 
+def get_device():
+    if torch.cuda.is_available(): #False: #
+        device = 'cuda:0'
+    else:
+        device = 'cpu'
+    print(' - Device: ', device, ' - ')
+    return device
+
+def plotting(mat):
+    d_model = mat.shape[-1]
+    ic(d_model)
+    ic(mat)
+    # mat = positional_encoding(max_pos, d_model, 0)
+    plt.pcolormesh(np.array(mat[0]), cmap='copper')
+    plt.xlabel('Depth')
+    plt.xlim((0, d_model))
+    plt.ylabel('Position')
+    plt.title("PE matrix heat map")
+    plt.colorbar()
+    plt.show()
+    time.sleep(5)
+
+
+def quinconx(l, d=1):
+    nb = len(l)
+    if nb==2:
+        a, b = l
+        return torch.cat([a.unsqueeze(-1), b.unsqueeze(-1)], dim=-1).flatten(start_dim=d)
+    elif nb==3:
+        a, b, c = l
+        q1 = torch.cat([b.unsqueeze(-1), c.unsqueeze(-1)], dim=-1).flatten(start_dim=d)
+        return torch.cat([a.unsqueeze(-1), q1.unsqueeze(-1)], dim=-1).flatten(start_dim=d)
+    elif nb==4:
+        a, b, c, dd = l
+        return torch.cat([a.unsqueeze(-1), b.unsqueeze(-1), c.unsqueeze(-1), dd.unsqueeze(-1)], dim=-1).flatten(start_dim=d)
+
 def indice_map2image(indice_map, image_size):
     # x = Id // image_size ; y = Id%image_size
     return np.reshape(indice_map, (image_size, image_size))

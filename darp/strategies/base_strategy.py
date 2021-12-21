@@ -88,6 +88,7 @@ class BaseStrategy():
 
 
     def run(self):
+        print("RUN NN STRAT")
         # Image saving dir
         dir = './plots/rl_experiments/strategies/' + \
                self.__class__.__name__
