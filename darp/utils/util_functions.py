@@ -1,5 +1,4 @@
 import torch
-import drawSvg as draw
 import matplotlib.pyplot as plt
 import numpy as np
 

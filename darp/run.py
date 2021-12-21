@@ -47,7 +47,7 @@ def get_args(args):
     parser.add_argument('--nb_drivers', default=1, type=int)
     parser.add_argument('--env', default='DarEnv', type=str)
     parser.add_argument('--dataset', default='', type=str)
-    parser.add_argument('--rootdir', default='save_dir', type=str)
+    parser.add_argument('--rootdir', default='..', type=str)
     parser.add_argument('--reward_function', type=str)
     parser.add_argument('--trl', default=False, type=bool)
     parser.add_argument('--clearml', default=False, type=bool)
@@ -65,7 +65,7 @@ def get_args(args):
     parser.add_argument('--seed', default=None, type=int)
     parser.add_argument('--tag', default='', type=str)
     parser.add_argument('--pretrain', default=0, type=int)
-    parser.add_argument('--datadir', default='', type=str)
+    parser.add_argument('--datadir', default='../data/cordeau/', type=str)
     parser.add_argument('--augmentation', default=1, type=int)
 
     return parser.parse_known_args(args)[0]

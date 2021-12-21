@@ -161,7 +161,7 @@ class SupervisedTrainer():
             self.rep_type = '16'
             self.model='Trans18'
             self.emb_typ = 26
-        elif self.typ in [33]:
+        elif self.typ in [33]: #BEST ONE
             # 1 layer with all infformation concatenated
             self.classifier_type = 8
             self.encoder_bn=False
@@ -565,6 +565,7 @@ class SupervisedTrainer():
         size = number_batch * self.batch_size
         if self.datadir:
             data_directory = self.datadir
+
         else :
             data_directory = self.rootdir + '/data/supervision_data/'
 
@@ -1018,7 +1019,6 @@ class SupervisedTrainer():
         ic(len(self.dataset_names))
         # Load a 10th of the data
         dataset = self.load_partial_data()
-
         # Take care of the loaded dataset part to
         if self.supervision_function == 'rf':
             if self.balanced_dataset == 1 :
@@ -1115,12 +1115,16 @@ class SupervisedTrainer():
             validation_data = torch.utils.data.DataLoader(dataset, batch_size=self.batch_size,
                                                         sampler=valid_sampler)
         else :
+            action_counter = np.zeros(self.vocab_size + 1)
+            ic(dataset)
             for data in dataset:
                 o, a = data
                 action_counter[a] += 1
+
             self.criterion.weight = torch.from_numpy(action_counter).to(self.device)
+            ic(dataset)
             supervision_data = DataLoader(dataset, batch_size=self.batch_size, shuffle=self.shuffle)
-            validation_data = DataLoader([], batch_size=self.batch_size, shuffle=self.shuffle)
+            validation_data = DataLoader(dataset, batch_size=self.batch_size, shuffle=self.shuffle)
 
         return supervision_data,  validation_data
 
@@ -1139,7 +1143,7 @@ class SupervisedTrainer():
             self.current_epoch = epoch
 
             # Train
-            if self.rl <= epoch:
+            if self.rl > epoch:
                 self.supervision_function = ''
                 self.rl_train()
             else :
