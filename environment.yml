@@ -14,3 +14,4 @@ dependencies:
     - moviepy
     - drawSvg
     - sklearn
+    - clearml

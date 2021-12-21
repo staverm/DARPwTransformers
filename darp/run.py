@@ -9,7 +9,7 @@ import torch
 
 from utils import objdict
 from train import SupervisedTrainer
-
+from clearml import Task
 
 
 def get_args(args):
@@ -101,14 +101,14 @@ def goooo():
     if parameters.tag :
         tags_list.append(parameters.tag)
 
-    # task = None
-    # if parameters.clearml :
-    #     n = np.random.randint(10000)
-    #     task = Task.init(
-    #         project_name="DaRP",
-    #         task_name="experiment" + str(n),
-    #         auto_connect_frameworks={'pytorch': False},
-    #         tags=tags_list)
+    task = None
+    if parameters.clearml :
+        n = np.random.randint(10000)
+        task = Task.init(
+            project_name="DaRP",
+            task_name="experiment" + str(n),
+            auto_connect_frameworks={'pytorch': False},
+            tags=tags_list)
 
     # Get the trainer object
     trainer = SupervisedTrainer(parameters, sacred=None)
