@@ -45,7 +45,7 @@ python run.py \
 --typ 33 \
 --embed_size 512 \
 --checkpoint_dir '' \
---vocab_size 216 \
+--vocab_size 16 \
 --supervision nn \
 --tag 'Local train' \
 --heads 8 \
