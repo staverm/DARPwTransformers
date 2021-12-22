@@ -69,6 +69,16 @@ Description of parameters in `run.py`:
 - `--pretrain`: orginal authors parameter to try different approach. Shouldn't be used 
 - `--datadir`: is for where your data is.
 - `--augmentation`: "is defined in utils.objects.supercisiondataset
-I think it is a good way to enhance the data, probably there are other ways to do this or ways to do it better. The idea it to apply eucludian transformation to the datapoints and there solutions so the time and space distances dont change (and the supervision stays correct) but the data points value do change"  ~ author of orginal code 
-  
+I think it is a good way to enhance the data, probably there are other ways to do this or ways to do it better. The idea it to apply eucludian transformation to the datapoints and there solutions so the time and space distances dont change (and the supervision stays correct) but the data points value do change"  ~ author of orginal code
 
+## Code structure 
+
+- `run.py`: main file to set up the experiments. Run it with arguments provided above
+- in ```train``` folder there are functions used to train model the most important is `supervised_trainer.py` it has:
+  - `run` function which is main training loop 
+  - `updating_data` which creates training set and test set with help of `generate_supervision_data`
+  - `train` function which for every point in dataset collects information about environment, chooses next action and updates the weights according to the opimizer
+- other files as `evaluations.py` and `save_examples` are helper functions to the trainer
+- modularized transformer model is in ```models``` folder
+- in ```strategies``` there are defined strategies to learn especially `nn_strategy` (nearest neighbours)
+- in ```envirements``` different envirements are defined, we use `DarSeqEnv` which is sequential representation of problem

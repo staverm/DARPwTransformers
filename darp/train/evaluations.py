@@ -8,7 +8,6 @@ import os
 
 
 def offline_evaluation(
-        self,
         dataloader, 
         model, 
         sacred, 
