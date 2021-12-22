@@ -30,6 +30,7 @@ MANIFEST
 .idea
 darp/.DS_Store
 darp/plots
+darp/save_dir
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

@@ -3,12 +3,16 @@ import torch
 import torch.nn as nn
 
 from utils import get_device, plotting, quinconx
-from .classifier import Classifier
-from .encoder import Encoder
-# from transformerblock import TransformerBlock
+from classifier import Classifier
+from encoder import Encoder
 
 
 class Trans18(nn.Module):
+    """
+    Transformer as described in the report. As input takes position, time and environment embedding vectors. Uses
+    <code>num_layers</code> to determine the number of encoder blocks. The end classifier corresponds to classical
+    neural network.
+    """
     def __init__(
             self,
             src_vocab_size,
@@ -31,23 +35,9 @@ class Trans18(nn.Module):
     ):
 
         super(Trans18, self).__init__()
-        self.device = device  # get_device()
+        self.device = device
         self.num_layers = num_layers
         self.dropout = dropout
-
-        # todo allocate series of encoders here
-        # self.encoder = TransformerBlock(
-        #     src_vocab_size,
-        #     embed_size,
-        #     num_layers,
-        #     heads,
-        #     self.device,
-        #     forward_expansion,
-        #     dropout,
-        #     max_length,
-        #     typ,
-        #     encoder_bn
-        # )
 
         self.encoders = nn.ModuleList(
             Encoder(
@@ -84,8 +74,6 @@ class Trans18(nn.Module):
         # Boxing stuff
         self.extremas = extremas
         self.siderange = int(math.sqrt(self.src_vocab_size))
-        # self.boxh = abs(self.extremas[2] - self.extremas[0]) / self.siderange
-        # self.boxw = abs(self.extremas[3] - self.extremas[1]) / self.siderange
 
         self.embed_size = embed_size
         mapping_size = embed_size // 2
@@ -153,17 +141,6 @@ class Trans18(nn.Module):
 
         src_mask = self.make_src_mask(environment)
 
-        encodded_layers_out = 1
-        out_process = 1
-        if self.classifier_type in [10, 11, 12]:
-            encodded_layers_out = 4
-        if self.classifier_type in [12]:
-            out_process = 2
-
-        # enc_src = self.encoder(src, src_mask, positions=positions, times=times, layers_out=encodded_layers_out,
-        #                        out_process=out_process)  # [:, :nb_targets])
-        # src should be combination of all 3 vector embedding
-        # src = environment.to(self.device) + positions.to(self.device) + times.to(self.device)
         src = environment.to(self.device)
         dropout = nn.Dropout(self.dropout)
         src = dropout(src)
@@ -207,10 +184,6 @@ class Trans18(nn.Module):
         x_proj = x.matmul(transB)
         return torch.cat([torch.sin(x_proj), torch.cos(x_proj)], axis=-1)
 
-    # def bidim2int(self, coordonate):
-    #     h = abs(coordonate[:,0] - self.extremas[0]) / self.boxh
-    #     w = abs(coordonate[:,1] - self.extremas[1]) / self.boxw
-    #     return h.add(w * self.siderange).long()
 
     def quinconx(self, l):
         nb = len(l)
@@ -224,8 +197,6 @@ class Trans18(nn.Module):
 
     def env_encoding(self, src):
         w, ts, ds = src
-        embeddig_size = self.embed_size
-        bsz = w[0].shape[-1]
 
         # World
         world_emb = [self.ind_embedding1(w[0].long().to(self.device))]
@@ -244,11 +215,7 @@ class Trans18(nn.Module):
             targets_emb.append(self.quinconx([em1, em2, di1]))
             targets_emb.append(self.quinconx([em1, em3, di2]))
 
-        # Drivers
-        # em1 = [self.ind_embedding1(driver[0].long().to(self.device)) for driver in ds]
-
         drivers_emb = [self.ind_embedding4(torch.stack(driver, dim=-1).double().to(self.device)) for driver in ds]
-        # drivers_emb = [self.quinconx(em1, em2)]
 
         final_emb = torch.stack(world_emb + targets_emb + drivers_emb)
 
@@ -308,33 +275,3 @@ class Trans18(nn.Module):
         d1 = torch.cat(d1)
 
         return d1.permute(1, 0, 2)
-
-
-def example_usage():
-    device = get_device()
-    print(device)
-
-    x = torch.tensor(
-        [[1, 5, 6, 4, 3, 9, 5, 2, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-         [1, 5, 6, 4, 3, 9, 5, 2, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]).to(
-        device
-    )
-    trg = torch.tensor([[0], [0]]).to(device)
-
-    positions = [
-        torch.tensor([[0.1, 0.1], [0.1, 0.1]]),
-        torch.tensor([[[0.2, 0.2]], [[0.2, 0.2]]]),
-        torch.tensor([[[0.3, 0.3, 0.4, 0.4], [1.1, 1.1, 1.2, 1.2]], [[0.3, 0.3, 0.4, 0.4], [1.1, 1.1, 1.2, 1.2]]])
-    ]
-
-    src_pad_idx = 0
-    trg_pad_idx = 0
-    src_vocab_size = 10
-    trg_vocab_size = 10
-    model = Trans18(src_vocab_size, trg_vocab_size, src_pad_idx, trg_pad_idx, device=device).to(
-        device
-    )
-    out = model(x, trg[:, :-1], positions=positions, times=None)
-    print(out)
-    print(out.argmax(-1))
-    print(out.shape)

@@ -48,7 +48,7 @@ class TransformerBlock(nn.Module):
     # perform some data processing of the input, add input embedding and positional embedding,
     # pass through layers of encoder block
     def forward(self, x, mask, positions=None, times=None, layers_out=1, out_process=1):
-        # todo wonder why we need more embedding also here, if it is already done in Trans18 class
+        # fixme wonder why we need more embedding also here, if it is already done in Trans18 class
         N, seq_length, _ = x.shape
         if positions is None:
             positions = torch.tensor([0 for i in range(seq_length - 1)] + [1]).expand(N, seq_length).to(self.device)

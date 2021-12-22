@@ -2,26 +2,26 @@ python run.py \
 --total_timesteps 10000 \
 --monitor_freq 1000 \
 --example_freq 1000000 \
---epochs 10000 \
+--epochs 100 \
 --alias TestSupervised \
 --model Trans18 \
 --layers 256 256 \
 --eval_episodes 1 \
 --verbose 0 \
---nb_target 16 \
+--nb_target 18 \
 --image_size 10 \
---nb_drivers 2 \
+--nb_drivers 3 \
 --dataset '' \
 --reward_function ProportionalEndDistance \
 --data_size 10000 \
---batch_size 2 \
+--batch_size 4 \
 --dropout 0 \
 --lr 0.0001 \
 --optimizer Adam \
 --typ 33 \
---embed_size 512 \
+--embed_size 256 \
 --checkpoint_dir '' \
---vocab_size 16 \
+--vocab_size 18 \
 --supervision nn \
 --tag 'Local train' \
 --heads 8 \

@@ -17,7 +17,7 @@ def get_args(args):
         description="Parse argument used when running a train.",
         epilog="python train.py --epochs INT")
     # required input parameters
-    parser.add_argument('--epochs', default=10000, type=int)
+    parser.add_argument('--epochs', default=100, type=int)
     parser.add_argument('--alias', default='rl_no_basline', type=str)
     parser.add_argument('--lr', default=0.001, type=float)
     parser.add_argument('--batch_size', default=512, type=int)
@@ -68,7 +68,7 @@ def get_args(args):
     parser.add_argument('--tag', default='', type=str)
     parser.add_argument('--pretrain', default=0, type=int)
     parser.add_argument('--datadir', default='', type=str)
-    parser.add_argument('--augmentation', default=1, type=int)
+    parser.add_argument('--augmentation', default=0, type=int)
 
     return parser.parse_known_args(args)[0]
 

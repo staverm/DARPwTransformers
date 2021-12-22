@@ -35,27 +35,31 @@ class DarSeqEnv(DarEnv):
         self.max_capacity = max_capacity
         self.max_ride_time = max_ride_time
         self.service_time = service_time
-        if self.dataset:
-            self.max_step = time_end * 3
-            self.best_cost = tabu_parse_best(self.dataset)
-            if self.test_env :
-                super(DarSeqEnv, self).__init__(size, target_population, driver_population, time_end=time_end, max_step=self.max_step)
-                self.extremas, self.target_population, self.driver_population, self.time_end, self.depot_position, self.size, self.time_limit, self.max_capacity, self.max_ride_time, self.service_time = tabu_parse_info(self.dataset)
-            else :
-                # Get info from dataset, to construct artificial data with those parameters
-                super(DarSeqEnv, self).__init__(size, target_population, driver_population, time_end=time_end, max_step=self.max_step)
+        import sys
+        # sys.breakpointhook()
+        print(sys.version)
 
-                self.extremas, self.target_population, self.driver_population, self.time_end, self.depot_position, self.size, self.time_limit, self.max_capacity, self.max_ride_time, self.service_time = tabu_parse_info(self.dataset)
+        # if self.dataset:
+        #     self.max_step = time_end * 3
+        #     self.best_cost = tabu_parse_best(self.dataset)
+        #     if self.test_env :
+        #         super(DarSeqEnv, self).__init__(size, target_population, driver_population, time_end=time_end, max_step=self.max_step)
+        #         self.extremas, self.target_population, self.driver_population, self.time_end, self.depot_position, self.size, self.time_limit, self.max_capacity, self.max_ride_time, self.service_time = tabu_parse_info(self.dataset)
+        #     else :
+        #         # Get info from dataset, to construct artificial data with those parameters
+        #         super(DarSeqEnv, self).__init__(size, target_population, driver_population, time_end=time_end, max_step=self.max_step)
+        #
+        #         self.extremas, self.target_population, self.driver_population, self.time_end, self.depot_position, self.size, self.time_limit, self.max_capacity, self.max_ride_time, self.service_time = tabu_parse_info(self.dataset)
 
-        else :
-            self.best_cost = 1000
-            super(DarSeqEnv, self).__init__(size, target_population, driver_population, time_end=1400, max_step=max_step)
-            self.extremas = [-self.size, -self.size, self.size, self.size]
-            x = np.random.uniform(-self.size, self.size)
-            y = np.random.uniform(-self.size, self.size)
-            # # TODO: Remove this
-            self.depot_position = np.array((x, y)) #, dtype=np.float16)
-            # self.depot_position = np.array((0.1, 0.1))
+        # else :
+        self.best_cost = 1000
+        super(DarSeqEnv, self).__init__(size, target_population, driver_population, time_end=1400, max_step=max_step)
+        self.extremas = [-self.size, -self.size, self.size, self.size]
+        x = np.random.uniform(-self.size, self.size)
+        y = np.random.uniform(-self.size, self.size)
+        # # TODO: Remove this
+        self.depot_position = np.array((x, y)) #, dtype=np.float16)
+        # self.depot_position = np.array((0.1, 0.1))
 
         #self.driver_population*2 + self.target_population
         choix_id_target = True

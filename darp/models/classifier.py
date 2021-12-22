@@ -97,4 +97,5 @@ class Classifier(nn.Module):
         elif self.classifier_type in [1, 2]:
             output = output[:, 0, :]
 
+        output = nn.Softmax(output)
         return output

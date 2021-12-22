@@ -17,6 +17,7 @@ class MemoryDataset(Dataset):
         instance = self.data[idx]
         return instance
 
+
 class SupervisionDataset(Dataset):
     """ Customed Dataset class for our Instances data
     """

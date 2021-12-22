@@ -75,7 +75,9 @@ class SupervisedTrainer():
 
         self.sacred = sacred
 
-        self.device = get_device()
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        # self.device = get_device()
 
         #### RL elements
 
@@ -201,14 +203,14 @@ class SupervisedTrainer():
             self.scheduler = MultiStepLR(self.optimizer, milestones=self.milestones, gamma=self.gamma)
 
         # Checkpoint
-        if self.checkpoint_dir :
-            ic(' -- -- -- -- -- Loading  -- -- -- -- -- --')
-            if self.typ >= 40 :
-                self.model.load_state_dict(torch.load(self.rootdir + '/data/rl_experiments/' + self.checkpoint_dir).state_dict(), strict=False)
-            else:
-                self.model.load_state_dict(torch.load(self.rootdir + '/data/rl_experiments/' + self.checkpoint_dir).state_dict())
-            ic(' -- The model weights has been loaded ! --')
-            ic(' -----------------------------------------')
+        # if self.checkpoint_dir :
+        #     ic(' -- -- -- -- -- Loading  -- -- -- -- -- --')
+        #     if self.typ >= 40 :
+        #         self.model.load_state_dict(torch.load(self.rootdir + '/data/rl_experiments/' + self.checkpoint_dir).state_dict(), strict=False)
+        #     else:
+        #         self.model.load_state_dict(torch.load(self.rootdir + '/data/rl_experiments/' + self.checkpoint_dir).state_dict())
+        #     ic(' -- The model weights has been loaded ! --')
+        #     ic(' -----------------------------------------')
 
         if self.rl < 10000:
             self.baseline_model = copy.deepcopy(self.model)
@@ -533,6 +535,7 @@ class SupervisedTrainer():
 
         # Take care of the loaded dataset part to
         action_counter = np.zeros(self.vocab_size + 1)
+        #FIXME use of Dataloader class probably destroy data value
         if self.pretrain :
             dataset_size = len(dataset)
             indices = list(range(dataset_size))
@@ -548,6 +551,7 @@ class SupervisedTrainer():
             validation_data = torch.utils.data.DataLoader(dataset, batch_size=self.batch_size,
                                                         sampler=valid_sampler)
         else :
+            #fixme what is this loop?
             for data in dataset:
                 o, a = data
                 action_counter[a] += 1

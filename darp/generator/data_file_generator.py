@@ -26,13 +26,13 @@ class DataFileGenerator():
         if env is None :
             self.params = {
                 'size': 10,
-                'target_population': 5,
-                'driver_population': 2,
+                'target_population': 6,
+                'driver_population': 3,
                 'reward_function': 'ConstantReward',
                 'time_end': 1400,
                 'max_step': 2000,
                 'timeless' : False,
-                'dataset': '../data/cordeau/a2-16.txt', #'/home/tibo/Documents/Prog/EPFL/own/data/instances/cordeau2006/a2-16.txt',
+                'dataset': '../data/cordeau/a3-18.txt', #'/home/tibo/Documents/Prog/EPFL/own/data/instances/cordeau2006/a2-16.txt',
                 'test_env': False,
                 'out_dir': '../generator_out/',
                 'data_size': 1
