@@ -470,7 +470,7 @@ class SupervisedTrainer():
 
         # Take care of the loaded dataset part to
         action_counter = np.zeros(self.vocab_size + 1)
-        if self.pretrain :
+        if True :
             dataset_size = len(dataset)
             indices = list(range(dataset_size))
             split = int(np.floor(0.1 * dataset_size))
@@ -518,7 +518,7 @@ class SupervisedTrainer():
             # self.rl_train()
 
             # Evaluate
-            if self.pretrain:
+            if True:
                 self.best_eval_metric = offline_evaluation(validation_data,
                 self.model,
                 self.sacred,
