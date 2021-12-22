@@ -1,22 +1,16 @@
-import logging
-import os
-import imageio
 import time
 import json
 import numpy as np
 import math
 import copy
 from icecream import ic
-import drawSvg as draw
-import seaborn as sn
-import gym
 
 from moviepy.editor import *
 from matplotlib.image import imsave
 import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('Agg')
-
+from .evaluations import *
 
 from torch.utils.data import DataLoader, SubsetRandomSampler, Dataset, ConcatDataset
 from torch.distributions.categorical import Categorical
@@ -25,7 +19,6 @@ import torch.nn as nn
 from torch.nn.functional import softmax
 from torch.optim.lr_scheduler import MultiStepLR, ReduceLROnPlateau
 import torch.optim as optim
-from sklearn.metrics import confusion_matrix, f1_score
 
 from models import *
 from utils import *
@@ -33,17 +26,10 @@ from environments import DarEnv, DarPixelEnv, DarSeqEnv
 from utils import get_device, objdict, SupervisionDataset
 from strategies import NNStrategy #, NNStrategyV2
 from generator import DataFileGenerator #, RFGenerator
-
-# from dialRL.strategies.external.darp_rf.run_rf_algo import run_rf_algo
-
+from .save_examples import *
+import sys
 
 torch.autograd.set_detect_anomaly(True)
-# os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # FATAL
-# logging.getLogger('tensorflow').setLevel(logging.FATAL)
-#
-# tf.enable_eager_execution()
-
-
 
 
 class SupervisedTrainer():
@@ -57,17 +43,14 @@ class SupervisedTrainer():
             setattr(self, key, flags[key])
 
         # Create saving experient dir
-        if False :#self.sacred :
-            self.path_name = '/'.join([self.sacred.experiment_info['base_dir'], self.file_dir, str(self.sacred._id)])
+        self.path_name = self.rootdir + '/data/rl_experiments/' + self.alias + time.strftime("%d-%H-%M") + '_typ' + str(self.typ)
+        ic(' ** Saving train path: ', self.path_name)
+        if not os.path.exists(self.path_name):
+            os.makedirs(self.path_name, exist_ok=True)
         else :
-            self.path_name = self.rootdir + '/data/rl_experiments/' + self.alias + time.strftime("%d-%H-%M") + '_typ' + str(self.typ)
-            ic(' ** Saving train path: ', self.path_name)
-            if not os.path.exists(self.path_name):
-                os.makedirs(self.path_name, exist_ok=True)
-            else :
-                ic(' Already such a path.. adding random seed')
-                self.path_name = self.path_name + '#' + str(torch.randint(0, 10000, [1]).item())
-                os.makedirs(self.path_name, exist_ok=True)
+            ic(' Already such a path.. adding random seed')
+            self.path_name = self.path_name + '#' + str(torch.randint(0, 10000, [1]).item())
+            os.makedirs(self.path_name, exist_ok=True)
 
         # Save parameters
         with open(self.path_name + '/parameters.json', 'w') as f:
@@ -226,52 +209,6 @@ class SupervisedTrainer():
                 vars(self)[item].summary()
             else :
                 ic(item, ':', vars(self)[item])
-
-    def save_example(self, observations, rewards, number, time_step):
-        noms = []
-        dir = self.path_name + '/example/' + str(time_step) + '/ex_number' + str(number)
-        if dir is not None:
-            os.makedirs(dir, exist_ok=True)
-
-            for i, obs in enumerate(observations):
-                save_name = dir + '/' + str(i) + '_r=' + str(rewards[i]) + '.png' 
-                image = obs
-                imsave(save_name, image)
-                noms.append(save_name)
-
-        # Save the imges as video
-        video_name = dir + 'r=' + str(np.sum(rewards)) + '.mp4'
-        clips = [ImageClip(m).set_duration(0.2)
-              for m in noms]
-
-        concat_clip = concatenate_videoclips(clips, method="compose")
-        concat_clip.write_videofile(video_name, fps=24, verbose=None, logger=None)
-
-        if self.sacred :
-            self.sacred.get_logger().report_media('video', 'Res_' + str(number) + '_Rwd=' + str(np.sum(rewards)),
-                                                  iteration=time_step,
-                                                  local_path=video_name)
-        del concat_clip
-        del clips
-
-    def save_svg_example(self, observations, rewards, number, time_step):
-        dir = self.path_name + '/example/' + str(time_step) + '/ex_number' + str(number)
-        video_name = dir + '/Strat_res.mp4'
-        if dir is not None:
-            os.makedirs(dir, exist_ok=True)
-
-        with draw.animate_video(video_name, align_right=True, align_bottom=True) as anim:
-            # Add each frame to the animation
-            for i, s in enumerate(observations):
-                anim.draw_frame(s)
-                if i==len(observations)-1 or i==0:
-                    for i in range(5):
-                        anim.draw_frame(s)
-
-        if self.sacred :
-            self.sacred.get_logger().report_media('Gif', 'Res_' + str(number) + '_Rwd=' + str(np.sum(rewards)),
-                                                  iteration=time_step,
-                                                  local_path=video_name)
 
 
     def generate_supervision_data(self):
@@ -582,14 +519,50 @@ class SupervisedTrainer():
 
             # Evaluate
             if self.pretrain:
-                self.offline_evaluation(validation_data, saving=True)
+                self.best_eval_metric = offline_evaluation(validation_data,
+                self.model,
+                self.sacred,
+                self.emb_typ,
+                self.typ,
+                self.device,
+                self.best_eval_metric,
+                self.current_epoch,
+                self.path_name,
+                self.checkpoint_type,
+                self.criterion,
+                saving=True)
             elif self.rl <= epoch:
                 ic(self.rl)
-                self.dataset_evaluation()
+                self.best_eval_metric = dataset_evaluation(self.model,
+                self.sacred,
+                self.emb_typ,
+                self.typ,
+                self.device,
+                self.best_eval_metric,
+                self.current_epoch,
+                self.path_name,
+                self.checkpoint_type,
+                self.inst_name,
+                self.dataset_env)
             else :
                 self.online_evaluation()
                 if self.dataset:
-                    self.online_evaluation(full_test=False)
+                    self.best_eval_metric = online_evaluation( 
+                        self.model, 
+                        self.sacred, 
+                        self.emb_typ, 
+                        self.typ, 
+                        self.best_eval_metric, 
+                        self.current_epoch, 
+                        self.path_name,
+                        self.checkpoint_type,
+                        self.eval_env,
+                        self.eval_episodes,
+                        self.supervision,
+                        self.example_format,
+                        self.criterion,
+                        self.device,
+                        full_test=False)
 
             round_counter +=1
 
@@ -597,365 +570,4 @@ class SupervisedTrainer():
 
 
 
-    def offline_evaluation(self, dataloader, full_test=True, saving=True):
-        """
-            Use a dataloader as a validation set to verify the models ability to find the supervision strategy.
-            As there is no online interaction with out ennvironement. The nomber of data metrics is minimal.
-        """
-        max_test_accuracy = 0
-        running_loss = 0
-        total = 0
-        correct = nearest_accuracy = pointing_accuracy = 0
-        mean_time_distance, mean_pick_distance, mean_drop_distance, mean_correct_loaded, mean_correct_available = 0, 0, 0, 0, 0
-
-        y_pred, y_sup = [], []
-        if full_test :
-            eval_name = 'Offline Test'
-        else :
-            eval_name = 'Supervised Test stats'
-
-
-        self.model.eval()
-        for i, data in enumerate(dataloader):
-            observation, supervised_action = data
-
-            if self.emb_typ >= 40 :
-                world, targets, drivers, positions, time_constraints, prior_kwlg = observation
-            else :
-                world, targets, drivers, positions, time_constraints = observation
-
-            info_block = [world, targets, drivers]
-            if self.typ in [17, 18, 19]:
-                target_tensor = world
-            else :
-                target_tensor = world[1].unsqueeze(-1).type(torch.LongTensor).to(self.device)
-
-            model_action = self.model(info_block,
-                                      target_tensor,
-                                      positions=positions,
-                                      times=time_constraints)
-
-
-            # model_action = model_action[:,0]
-            supervised_action = supervised_action.to(self.device)
-
-            if self.pretrain :
-                loss, time_distance, pick_distance, drop_distance, correct_loaded, correct_available = self.pretrain_loss(model_action, prior_kwlg)
-                total += supervised_action.size(0)
-                running_loss += loss.item()
-                mean_time_distance += time_distance
-                mean_pick_distance += pick_distance
-                mean_drop_distance += drop_distance
-                mean_correct_loaded += correct_loaded
-                mean_correct_available += correct_available
-                correct += (correct_available + correct_loaded)/2
-                y_pred = y_pred + [0]
-                y_sup = y_sup + [0]
-            else :
-                loss = self.criterion(model_action.squeeze(1), supervised_action.squeeze(-1))
-                total += supervised_action.size(0)
-                correct += np.sum((model_action.squeeze(1).argmax(-1) == supervised_action.squeeze(-1)).cpu().numpy())
-                running_loss += loss.item()
-
-                y_pred = y_pred +model_action.squeeze(1).argmax(dim=-1).flatten().tolist()
-                y_sup = y_sup + supervised_action.squeeze(-1).tolist()
-
-            # Limit train passage to 20 rounds
-            if i == 20:
-                break
-
-        if self.pretrain :
-            self.pretrain_log('Pretrain test',
-                              mean_time_distance,
-                              mean_pick_distance,
-                              mean_drop_distance,
-                              mean_correct_loaded,
-                              mean_correct_available,
-                              total)
-
-        eval_acc = 100 * correct/total
-        eval_loss = running_loss/total
-
-        cf_matrix = confusion_matrix(y_sup, y_pred)
-        #Calculate metrics for each label, and find their average weighted by support (the number of true instances for each label).
-        f1_metric = f1_score(y_sup, y_pred, average='weighted')
-        #Calculate metrics globally by counting the total true positives, false negatives and false positives.
-        f1_metric1 = f1_score(y_sup, y_pred, average='micro')
-        #Calculate metrics for each label, and find their unweighted mean. This does not take label imbalance into account.
-        f1_metric2 = f1_score(y_sup, y_pred, average='macro')
-
-        ic('\t-->' + eval_name + 'Réussite: ', eval_acc, '%')
-        ic('\t-->' + eval_name + 'F1 :', f1_metric)
-        ic('\t-->' + eval_name + 'Loss:', running_loss/total)
-
-        # Model saving. Condition: Better accuracy and better loss
-        if saving and full_test and (eval_acc > self.best_eval_metric[0] or ( eval_acc == self.best_eval_metric[0] and eval_loss <= self.best_eval_metric[1] )):
-            self.best_eval_metric[0] = eval_acc
-            self.best_eval_metric[1] = eval_loss
-            if self.checkpoint_type == 'best':
-                model_name = self.path_name + '/models/best_offline_model.pt'
-            else :
-                model_name = self.path_name + '/models/model_offline' + str(self.current_epoch) + '.pt'
-            os.makedirs(self.path_name + '/models/', exist_ok=True)
-            ic('\t New Best Accuracy Model <3')
-            ic('\tSaving as:', model_name)
-            torch.save(self.model, model_name)
-
-            dir = self.path_name + '/example/'
-            os.makedirs(dir, exist_ok=True)
-            save_name = dir + '/cf_matrix.png'
-            conf_img = sn.heatmap(cf_matrix, annot=True)
-            plt.savefig(save_name)
-            plt.clf()
-            self.sacred.get_logger().report_media('Image', 'Confusion Matrix',
-                                              iteration=self.current_epoch,
-                                              local_path=save_name)
-
-        # Statistics on clearml saving
-        if self.sacred :
-            self.sacred.get_logger().report_scalar(title=eval_name,
-                series='reussite %', value=eval_acc, iteration=self.current_epoch)
-            self.sacred.get_logger().report_scalar(title=eval_name,
-                series='Loss', value=running_loss/total, iteration=self.current_epoch)
-            self.sacred.get_logger().report_scalar(title=eval_name,
-                series='F1 score weighted', value=f1_metric, iteration=self.current_epoch)
-            self.sacred.get_logger().report_scalar(title=eval_name,
-                series='F1 score micro', value=f1_metric1, iteration=self.current_epoch)
-            self.sacred.get_logger().report_scalar(title=eval_name,
-                series='F1 score macro', value=f1_metric2, iteration=self.current_epoch)
-            # self.sacred.get_logger().report_scalar(title=eval_name,
-            #     series='Fit solution %', value=100*fit_sol/self.eval_episodes, iteration=self.current_epoch)
-            # self.sacred.get_logger().report_scalar(title=eval_name,
-            #     series='Average delivered', value=delivered/self.eval_episodes, iteration=self.current_epoch)
-            # self.sacred.get_logger().report_scalar(title=eval_name,
-            #     series='Average gap', value=gap/self.eval_episodes, iteration=self.current_epoch)
-            # self.sacred.get_logger().report_scalar(title=eval_name,
-            #     series='Step Reward', value=total_reward/total, iteration=self.current_epoch)
-
-    def dataset_evaluation(self):
-        ic('\t** ON DATASET :', self.inst_name, '**')
-        eval_name = 'Dataset Test'
-        done = False
-        observation = self.dataset_env.reset()
-        total_reward = 0
-        while not done:
-            if self.emb_typ >= 40 :
-                world, targets, drivers, positions, time_contraints, prior_kwlg = observation
-                time_contraints = [torch.tensor([time_contraints[0]], dtype=torch.float64),
-                             [torch.tensor([time], dtype=torch.float64) for time in time_contraints[1]]]
-            else :
-                world, targets, drivers, positions, time_contraints = observation
-                time_contraints = [torch.tensor([time_contraints[0]], dtype=torch.float64),
-                             [torch.tensor([time], dtype=torch.float64) for time in time_contraints[1]],
-                             [torch.tensor([time], dtype=torch.float64) for time in time_contraints[2]]]
-
-            positions = [torch.tensor([positions[0]], dtype=torch.float64),
-                         [torch.tensor([position], dtype=torch.float64) for position in positions[1]],
-                         [torch.tensor([position], dtype=torch.float64) for position in positions[2]]]
-
-            w_t = [torch.tensor([winfo],  dtype=torch.float64) for winfo in world]
-            t_t = [[torch.tensor([tinfo], dtype=torch.float64 ) for tinfo in target] for target in targets]
-            d_t = [[torch.tensor([dinfo],  dtype=torch.float64) for dinfo in driver] for driver in drivers]
-            info_block = [w_t, t_t, d_t]
-
-            target_tensor = torch.tensor([world[1]]).unsqueeze(-1).type(torch.LongTensor).to(self.device)
-
-            model_action = self.model(info_block,
-                                      target_tensor,
-                                      positions=positions,
-                                      times=time_contraints)
-
-            if self.typ >25:
-                chosen_action = model_action.argmax(-1).cpu().item()
-            else :
-                chosen_action = model_action[:, 0].argmax(-1).cpu().item()
-
-            observation, reward, done, info = self.dataset_env.step(chosen_action)
-            total_reward += reward
-
-        if info['fit_solution'] and info['GAP'] < self.best_eval_metric[2] :
-            ic('/-- NEW BEST GAP SOLUTION --\\')
-            ic('/-- GAP:', info['GAP'])
-            self.best_eval_metric[2] = info['GAP']
-            if self.checkpoint_type == 'best':
-                model_name = self.path_name + '/models/best_GAP_model.pt'
-            else :
-                model_name = self.path_name + '/models/GAP_model_' + str(self.current_epoch) + '.pt'
-            ic('\tSaving as:', model_name)
-            os.makedirs(self.path_name + '/models/', exist_ok=True)
-            torch.save(self.model, model_name)
-
-        ic('/- Fit solution:', info['fit_solution'])
-        ic('/- with ',info['delivered'], 'deliveries')
-        if info['fit_solution'] :
-            ic('/- GAP to optimal solution: ', info['GAP'], '(counts only if fit solution)')
-        ic('/- Optim Total distance:', self.dataset_env.best_cost)
-        ic('/- Model Total distance:', self.dataset_env.total_distance)
-
-        if self.sacred :
-            self.sacred.get_logger().report_scalar(title=eval_name,
-                series='Fit solution', value=info['fit_solution'], iteration=self.current_epoch)
-            self.sacred.get_logger().report_scalar(title=eval_name,
-                series='Delivered', value=info['delivered'], iteration=self.current_epoch)
-            if info['fit_solution'] > 0:
-                self.sacred.get_logger().report_scalar(title=eval_name,
-                    series='Average gap', value=info['GAP'], iteration=self.current_epoch)
-            else :
-                self.sacred.get_logger().report_scalar(title=eval_name,
-                    series='Average gap', value=300, iteration=self.current_epoch)
-            self.sacred.get_logger().report_scalar(title=eval_name,
-                series='Total Reward', value=total_reward, iteration=self.current_epoch)
-
-
-    def online_evaluation(self, full_test=True, supervision=True, saving=True):
-        """
-            Online evaluation of the model according to the supervision method.
-            As it is online, we  can maximise the testing informtion about the model.
-        """
-        correct = total = running_loss = total_reward = 0
-        delivered = 0
-        gap = 0
-        fit_sol = 0
-        self.supervision.env = self.eval_env
-        if full_test :
-            eval_name = 'Test stats'
-        else :
-            eval_name = 'Supervised Test stats'
-
-        self.model.eval()
-        for eval_step in range(self.eval_episodes):
-
-            # Generate solution and evironement instance.
-            done = False
-            observation = self.eval_env.reset()
-
-            if self.example_format == 'svg':
-                to_save = [self.eval_env.get_svg_representation() if full_test else 0]
-            else :
-                to_save = [self.eval_env.get_image_representation() if full_test else 0]
-            save_rewards = [0]
-            last_time = 0
-
-            while not done:
-                if self.emb_typ >= 40 :
-                    world, targets, drivers, positions, time_contraints, prior_kwlg = observation
-                    time_contraints = [torch.tensor([time_contraints[0]], dtype=torch.float64),
-                                 [torch.tensor([time], dtype=torch.float64) for time in time_contraints[1]]]
-                else :
-                    world, targets, drivers, positions, time_contraints = observation
-                    time_contraints = [torch.tensor([time_contraints[0]], dtype=torch.float64),
-                                 [torch.tensor([time], dtype=torch.float64) for time in time_contraints[1]],
-                                 [torch.tensor([time], dtype=torch.float64) for time in time_contraints[2]]]
-
-                positions = [torch.tensor([positions[0]], dtype=torch.float64),
-                             [torch.tensor([position], dtype=torch.float64) for position in positions[1]],
-                             [torch.tensor([position], dtype=torch.float64) for position in positions[2]]]
-
-                w_t = [torch.tensor([winfo],  dtype=torch.float64) for winfo in world]
-                t_t = [[torch.tensor([tinfo], dtype=torch.float64 ) for tinfo in target] for target in targets]
-                d_t = [[torch.tensor([dinfo],  dtype=torch.float64) for dinfo in driver] for driver in drivers]
-                info_block = [w_t, t_t, d_t]
-
-                if self.typ in [17, 18, 19]:
-                    target_tensor = w_t
-                else :
-                    target_tensor = torch.tensor([world[1]]).unsqueeze(-1).type(torch.LongTensor).to(self.device)
-
-                model_action = self.model(info_block,
-                                          target_tensor,
-                                          positions=positions,
-                                          times=time_contraints)
-
-                if supervision :
-                    supervised_action = self.supervision.action_choice()
-                    supervised_action = torch.tensor([supervised_action]).type(torch.LongTensor).to(self.device)
-
-                if self.typ >25:
-                    chosen_action = model_action.argmax(-1).cpu().item()
-                else :
-                    chosen_action = model_action[:, 0].argmax(-1).cpu().item()
-
-                if full_test :
-                    observation, reward, done, info = self.eval_env.step(chosen_action)
-                elif supervision :
-                    observation, reward, done, info = self.eval_env.step(supervised_action)
-
-                # self.eval_env.render()
-                if supervision :
-                    loss = self.criterion(model_action[:,0], supervised_action)
-                    running_loss += loss.item()
-                    correct += (chosen_action == supervised_action).cpu().numpy()[0]
-                else :
-                    correct += 0
-                    running_loss += 0
-                    loss = 0
-
-                total_reward += reward
-                total += 1
-
-                if self.eval_env.time_step > last_time and full_test:
-                    last_time = self.eval_env.time_step
-                    if self.example_format == 'svg':
-                        to_save.append(self.eval_env.get_svg_representation())
-                    else :
-                        to_save.append(self.eval_env.get_image_representation())
-                    save_rewards.append(reward)
-            # Env is done
-                # If not rf supervision
-            gap += info['GAP']
-
-            fit_sol += info['fit_solution'] #self.eval_env.is_fit_solution()
-            delivered += info['delivered']
-
-        # To spare time, only the last example is saved
-        eval_acc = 100 * correct/total
-        eval_loss = running_loss/total
-
-        ic('\t-->' + eval_name + 'Réussite: ', eval_acc, '%')
-        ic('\t-->' + eval_name + 'Loss:', running_loss/total)
-        ic('\t-->' + eval_name + 'Fit solution: ', 100*fit_sol/self.eval_episodes, '%')
-        ic('\t-->' + eval_name + 'Average delivered', delivered/self.eval_episodes)
-        ic('\t-->' + eval_name + 'Step Reward ', total_reward/total)
-
-        # Model saving. Condition: Better accuracy and better loss
-        if fit_sol > 0 and gap < self.best_eval_metric[3] :
-            self.best_eval_metric[3] = gap
-            if self.checkpoint_type == 'best':
-                model_name = self.path_name + '/models/best_online_model.pt'
-            else :
-                model_name = self.path_name + '/models/model_online' + str(self.current_epoch) + '.pt'
-            os.makedirs(self.path_name + '/models/', exist_ok=True)
-            ic('\t New Best online GAP Model <3')
-            ic('\tSaving as:', model_name)
-            torch.save(self.model, model_name)
-
-            # Saving an example
-            # if self.example_format == 'svg':
-            #     self.save_svg_example(to_save, save_rewards, 0, time_step=self.current_epoch)
-            # else :
-            #     self.save_example(to_save, save_rewards, 0, time_step=self.current_epoch)
-
-
-        # Statistics on clearml saving
-        if self.sacred :
-            self.sacred.get_logger().report_scalar(title=eval_name,
-                series='reussite %', value=eval_acc, iteration=self.current_epoch)
-            self.sacred.get_logger().report_scalar(title=eval_name,
-                series='Loss', value=running_loss/total, iteration=self.current_epoch)
-            self.sacred.get_logger().report_scalar(title=eval_name,
-                series='Fit solution %', value=100*fit_sol/self.eval_episodes, iteration=self.current_epoch)
-            self.sacred.get_logger().report_scalar(title=eval_name,
-                series='Average delivered', value=delivered/self.eval_episodes, iteration=self.current_epoch)
-            if self.supervision_function == 'rf' :
-                if fit_sol > 0:
-                    self.sacred.get_logger().report_scalar(title=eval_name,
-                        series='Average gap', value=gap/fit_sol, iteration=self.current_epoch)
-                else :
-                    self.sacred.get_logger().report_scalar(title=eval_name,
-                        series='Average gap', value=300, iteration=self.current_epoch)
-            else :
-                self.sacred.get_logger().report_scalar(title=eval_name,
-                    series='Average gap', value=gap/self.eval_episodes, iteration=self.current_epoch)
-            self.sacred.get_logger().report_scalar(title=eval_name,
-                series='Step Reward', value=total_reward/total, iteration=self.current_epoch)
 
