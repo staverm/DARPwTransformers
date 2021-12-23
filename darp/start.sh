@@ -21,13 +21,12 @@ python run.py \
 --typ 33 \
 --embed_size 512 \
 --checkpoint_dir '' \
---vocab_size 16 \
+--vocab_size 24 \
 --supervision nn \
 --tag 'Local train' \
 --heads 8 \
 --forward_expension 4 \
 --num_layers 6 \
---clearml 0 \
 --balanced_dataset 0 \
 --rl 0 \
 --augmentation 0 
