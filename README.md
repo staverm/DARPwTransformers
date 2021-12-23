@@ -1,4 +1,5 @@
 # Transformer network for the Dial-a-Ride problem
+The Dial-a-Ride Problem (DARP) is a complex combinatorial problem considered in the operational research field. Given a set of drivers and a stream of tasks, where each task is a ride between two points under some time constraints, one has to find a mapping that assigns a driver to the given task. This problem is highly relevant in today's economy as delivery services have gained large popularity and become widespread. It is usually solved by using hand-crafted heuristics inspired by solutions for the Travelling Salesman Problem. This repository contains the code for a transformer network capable of cloning a supervision policy on DARP instances. This provides evidence that such an architecture is capable of understanding the intricacies of DARP and thus similar architectures can likely be applied to other NP-hard problems in operational research.
 
 ## Configuration
 
@@ -9,76 +10,76 @@ conda env create --prefix ./env --file environment.yml
 conda activate ./env
 ```
 
-Init clearml
+Initialize clearml if you wish to use it.
 ```
 clearml-init
 ```
-Then follow instructions
+Then follow instructions, alternatively copy clearml.conf to your home directory.
 
-Alternatively copy clearml.conf to your home directory 
-
-Run Nearest Neighbour strategy on the smallest instance of cordeau:
+Run the script which starts:
+- supervision dataset generation using Nearest Neighbor strategy
+- supervised training
+- model evaluation
 ```bash
 cd darp
-python3 run.py
+./start.sh
 ```
 
 ## Usage and parameters
 
-Description of parameters in `run.py`:
-- `--epochs`: number of epochs in the experiment 
-- `--alias`: is the folder base name for saving (in addition there will be a time stamp)
-- `--lr`:  is the adam learning rate
-- `--batch_size`:  is the supervision batch size
-- `--shuffle`: will mix the datapoints for the training (should be true)
+Description of parameters of `run.py` and `start.sh`:
+- `--epochs`: number of training epochs 
+- `--alias`: folder name used for saving experiment metadata
+- `--lr`:  adam learning rate
+- `--batch_size`:  supervision batch size
+- `--shuffle`: shuffles datapoints used for training (should be true)
 - `--optimizer`: (should be adam)
-- `--criterion`: should be crossentropy for my classical supervision
-- `--model`: should be Trans18 (not working well with others)
-- `--checkpoint_type`: should be best (will actually save the best for train, offline test and best online test with GAP metric)
-- `--milestones`: isnt used be you can set it by using the multisteplr scheduler
-- `--gamma`: is the reducing facor for the scheduler
-- `--dropout`: is dropout rate in transformers
-- `--patience`: for the plateau scheduler
-- `--scheduler`: is none, plateau or multistep
-- `--checkpoint_dir`: diectory to load saved models
-- `--total_timesteps`: is a bound to the environment. It just need to be sufficently high, like 10k
-- `--monitor_freq` and `--example_freq`: "where used in the monitor callback that i finally gave up even tho its a good way to do train monitoring, just in case" ~ author of orginal code
+- `--criterion`: should be crossentropy for classical supervision
+- `--model`: alias of the model to be used, should be Trans18 (not working well with others)
+- `--checkpoint_type`: should be best, saves the best model weights for train, offline_test and online+test
+- `--milestones`: deprecated, but can be set by using the multisteplr scheduler
+- `--gamma`: reducing factor for the scheduler
+- `--dropout`: dropout rate in transformers
+- `--patience`: plateau scheduler
+- `--scheduler`: none, plateau or multistep
+- `--checkpoint_dir`: directory from where to load saved models
+- `--total_timesteps`: bound to the environment, needs to be sufficently high ~ 10k
+- `--monitor_freq` and `--example_freq`: deprecated
 - `--example_format`: format to save result pictures, should be svg
-- `--eval_episodes`: nb of tests each time. In big train it should be reduce as maximum because it's very time consumming
-- `--verbose`: "(probably very wrongly used in the code...)" ~ author of orginal code
-- `--max_step`: maximum of steps used by envirement which will be replecated by model. Should be large number
-- `--nb_target`: the parameter of the problem instance. In problem definition a2-16 16 stands for number of targets
-- `--image_size`: is the size of the square in witch the instance takes place. Should be 10 to match cordeau's sizes
-- `--nb_drivers`: the parameter of the problem instance. In problem definition a2-16 2 stands for number of drivers
-- `--env`: should be DarSeqEnv (but actually the flag is not used in the code, it always right) ~author of orginal code
-- `--dataset`: "can be '' if you have all the right parameters, it will create and then use the one dataset that matches the specs" ~ author of orginal code
-- `--rootdir`: where the code is
-- `--reward_function`: defined for rl or for the testing take name from `utils.py`
-- `--clearml`: bool if use clearml experiment saving
-- `--data_size`: is the nb of points in the dataset. If you change it, it will create a new dataset that matches this size, from scratch. This size is in the data specs as well.
-- `--typ`: is a short for some combination of parameters, my best results are with typ=33 (others are only in orginal code)
-- `--timeless`: "will cut out the time constraints of the problem but I havent used it a lot, im not sure it is still working" ~ author of orginal code
-- `--embed_size`: the size of the embeddings in the transformer (the output of the decoder beeing (1+2*t+d) * embed size
-- `--rl`: "is the time step where rl is taking over the train process, shouldn't  be used." ~ author of orginal code
-- `--vacab_size`: "is changed hardcoded in the code, but it is just the max input sequence of the transformer i think"  ~ author of orginal code
-- `--supervision_function`: is nn or rf (rf not used in this repository) according to the data you use as supervision
-- `--balanced_dataset`:  dataset will try out different types of balancing coded in supervised_trainer - only used with rf so not used in this code
-- `--num_layers`: is the classical parameters for transformer to know how menny time we repeat the blocks
+- `--eval_episodes`: nb of tests performed on each step of evaluation, on big trains should be reduced as it is very time consumming
+- `--verbose`: deprecated
+- `--max_step`: maximum number of steps used by environment which will be replicated by the model, should be a large number
+- `--nb_target`: number of targets, parameter of the problem instance
+- `--image_size`: size of the the square in which the instance takes place, should be 10 to match cordeau's sizes
+- `--nb_drivers`: number of drivers, parameter of the problem instance
+- `--env`: should be DarSeqEnv
+- `--dataset`: should be '', path to cached supervised dataset
+- `--rootdir`: project root directory
+- `--reward_function`: defined for rl or other testing function from the `utils` package
+- `--clearml`: if present, clearml is used to save experiment metadata
+- `--data_size`: number of points in the dataset. Changing it will create a new dataset that matches this size, from scratch.
+- `--typ`: used for debug and testing: a short for combination of parameters, best results are with typ=33 (others are present in orginal code)
+- `--timeless`: deprecated, cuts time constraints of the problem
+- `--embed_size`: the size of the embeddings in the transformer, the output of the encoder beeing (1+2*t+d) * embed size
+- `--rl`: deprecated, the time step where rl is taking over the train process
+- `--vacab_size`: max input sequence of the transformer, currently hardcoded
+- `--supervision_function`: the supervision policy trying to be learned. Should be nn for nearest neighbour or rf for restricted fragment (rf not used in this repository)
+- `--balanced_dataset`: balancing mode used for creating test and validation sets
+- `--num_layers`: number of layers for transformer
 - `--forward_expansion`: parameter of transformer 
 - `--heads`: number of transformers heads
-- `--pretrain`: orginal authors parameter to try different approach. Shouldn't be used 
-- `--datadir`: is for where your data is.
-- `--augmentation`: "is defined in utils.objects.supercisiondataset
-I think it is a good way to enhance the data, probably there are other ways to do this or ways to do it better. The idea it to apply eucludian transformation to the datapoints and there solutions so the time and space distances dont change (and the supervision stays correct) but the data points value do change"  ~ author of orginal code
+- `--pretrain`: deprecated
+- `--datadir`: path to data directory 
+- `--augmentation`: turns on data augmentation as described in original paper
 
 ## Code structure 
 
-- `run.py`: main file to set up the experiments. Run it with arguments provided above
-- in ```train``` folder there are functions used to train model the most important is `supervised_trainer.py` it has:
-  - `run` function which is main training loop 
+- `run.py`: main file to run experiments. Run it with arguments provided above
+- ```train``` folder contains functions used to train models, most notably `supervised_trainer.py` which has:
+  - `run` function which is the main training loop 
   - `updating_data` which creates training set and test set with help of `generate_supervision_data`
   - `train` function which for every point in dataset collects information about environment, chooses next action and updates the weights according to the opimizer
-- other files as `evaluations.py` and `save_examples` are helper functions to the trainer
+  - `evaluations.py` and `save_examples` define helper functions for the trainer
 - modularized transformer model is in ```models``` folder
-- in ```strategies``` there are defined strategies to learn especially `nn_strategy` (nearest neighbours)
-- in ```envirements``` different envirements are defined, we use `DarSeqEnv` which is sequential representation of problem
+- ```strategies``` folder contains supervision strategies trying to be learned, most notably `nn_strategy` (nearest neighbours)
+- ```environments``` folder contains different environment implementations, we use `DarSeqEnv` which is a sequential representation of given darp instance
