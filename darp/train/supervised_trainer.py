@@ -1,19 +1,16 @@
 import time
 import json
 import numpy as np
-import math
 import copy
 from icecream import ic
 
 from moviepy.editor import *
 from matplotlib.image import imsave
-import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('Agg')
 from .evaluations import *
 
-from torch.utils.data import DataLoader, SubsetRandomSampler, Dataset, ConcatDataset
-from torch.distributions.categorical import Categorical
+from torch.utils.data import  SubsetRandomSampler, ConcatDataset
 import torch
 import torch.nn as nn
 from torch.nn.functional import softmax
@@ -22,10 +19,9 @@ import torch.optim as optim
 
 from models import *
 from utils import *
-from environments import DarEnv, DarPixelEnv, DarSeqEnv
+from environments import DarSeqEnv
 from utils import get_device, objdict, SupervisionDataset
 from strategies import NNStrategy #, NNStrategyV2
-from generator import DataFileGenerator #, RFGenerator
 from .save_examples import *
 import sys
 
@@ -242,13 +238,6 @@ class SupervisedTrainer():
 
         def load_dataset():
             return [saving_name + file for file in os.listdir(saving_name)]
-            # files_names = os.listdir(saving_name)
-            # datasets = []
-            # for file in files_names:
-            #     ic('Datafile folder:', saving_name)
-            #     ic(file)
-            #     datasets.append(torch.load(saving_name + file))
-            # return ConcatDataset(datasets)
 
         def partial_name(size):
             name = saving_name + '/dataset_elementN' + str(self.data_part) + '_size' + str(size) + '.pt'
@@ -361,12 +350,10 @@ class SupervisedTrainer():
 
         final_loss = l1 + l2 + l3 + l4 +l5
 
-        # ic(l1, l2, l3, l4, l5)
         return final_loss, time_distance, pick_distance, drop_distance, correct_loaded, correct_available
 
 
     def train(self, dataloader):
-        max_test_accuracy = 0
         running_loss = 0
         total = 0
         correct = nearest_accuracy = pointing_accuracy = 0
@@ -484,13 +471,6 @@ class SupervisedTrainer():
                                                        sampler=train_sampler)
             validation_data = torch.utils.data.DataLoader(dataset, batch_size=self.batch_size,
                                                         sampler=valid_sampler)
-        else :
-            for data in dataset:
-                o, a = data
-                action_counter[a] += 1
-            self.criterion.weight = torch.from_numpy(action_counter).to(self.device)
-            supervision_data = DataLoader(dataset, batch_size=self.batch_size, shuffle=self.shuffle)
-            validation_data = DataLoader(dataset, batch_size=self.batch_size, shuffle=self.shuffle) #TODO it was empty
 
         return supervision_data,  validation_data
 
@@ -518,8 +498,7 @@ class SupervisedTrainer():
             # self.rl_train()
 
             # Evaluate
-            if True:
-                self.best_eval_metric = offline_evaluation(validation_data,
+            self.best_eval_metric = offline_evaluation(validation_data,
                 self.model,
                 self.sacred,
                 self.emb_typ,
@@ -531,39 +510,7 @@ class SupervisedTrainer():
                 self.checkpoint_type,
                 self.criterion,
                 saving=True)
-            elif self.rl <= epoch:
-                ic(self.rl)
-                self.best_eval_metric = dataset_evaluation(self.model,
-                self.sacred,
-                self.emb_typ,
-                self.typ,
-                self.device,
-                self.best_eval_metric,
-                self.current_epoch,
-                self.path_name,
-                self.checkpoint_type,
-                self.inst_name,
-                self.dataset_env)
-            else :
-                self.online_evaluation()
-                if self.dataset:
-                    self.best_eval_metric = online_evaluation( 
-                        self.model, 
-                        self.sacred, 
-                        self.emb_typ, 
-                        self.typ, 
-                        self.best_eval_metric, 
-                        self.current_epoch, 
-                        self.path_name,
-                        self.checkpoint_type,
-                        self.eval_env,
-                        self.eval_episodes,
-                        self.supervision,
-                        self.example_format,
-                        self.criterion,
-                        self.device,
-                        full_test=False)
-
+           
             round_counter +=1
 
         ic('\t ** Learning DONE ! **')
