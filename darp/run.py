@@ -110,9 +110,5 @@ def goooo():
     # Start a train
     trainer.run()
 
-    # # Start evaluation
-    trainer.test()
-
-
 if __name__ == '__main__':
     goooo()
