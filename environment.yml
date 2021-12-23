@@ -6,6 +6,12 @@ dependencies:
   - pytorch
   - numpy
   - matplotlib
+  - seaborn
+  - gym
   - pip
   - pip:
     - icecream
+    - moviepy
+    - drawSvg
+    - sklearn
+    - clearml
