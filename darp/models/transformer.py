@@ -1,6 +1,8 @@
 import math
 import torch
 import torch.nn as nn
+from .encoder import Encoder
+from .classifier import Classifier
 
 from utils import get_device, plotting, quinconx
 from .classifier import Classifier
