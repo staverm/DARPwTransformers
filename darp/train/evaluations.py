@@ -113,7 +113,7 @@ def offline_evaluation(
                                             local_path=save_name)
 
     # Statistics on clearml saving
-    if sacred :
+    if sacred is not None:
         sacred.get_logger().report_scalar(title=eval_name,
             series='reussite %', value=eval_acc, iteration=current_epoch)
         sacred.get_logger().report_scalar(title=eval_name,

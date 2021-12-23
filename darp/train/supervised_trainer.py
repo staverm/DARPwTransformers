@@ -316,7 +316,7 @@ class SupervisedTrainer():
         return data
 
     def pretrain_log(self, name, time_distance, pick_distance, drop_distance, correct_loaded, correct_available, total):
-        if self.sacred :
+        if self.sacred is not None:
             self.sacred.get_logger().report_scalar(title=name,
                 series='Time distance', value=time_distance/total, iteration=self.current_epoch)
             self.sacred.get_logger().report_scalar(title=name,
@@ -432,7 +432,7 @@ class SupervisedTrainer():
                               mean_correct_available,
                               total)
 
-        if self.sacred :
+        if self.sacred is not None:
             self.sacred.get_logger().report_scalar(title='Train stats',
                 series='train loss', value=100*running_loss/total, iteration=self.current_epoch)
             self.sacred.get_logger().report_scalar(title='Train stats',
