@@ -108,12 +108,13 @@ def offline_evaluation(
         conf_img = sn.heatmap(cf_matrix, annot=True)
         plt.savefig(save_name)
         plt.clf()
-        sacred.get_logger().report_media('Image', 'Confusion Matrix',
-                                            iteration=current_epoch,
-                                            local_path=save_name)
+       
 
     # Statistics on clearml saving
     if sacred is not None:
+        sacred.get_logger().report_media('Image', 'Confusion Matrix',
+                                            iteration=current_epoch,
+                                            local_path=save_name)
         sacred.get_logger().report_scalar(title=eval_name,
             series='reussite %', value=eval_acc, iteration=current_epoch)
         sacred.get_logger().report_scalar(title=eval_name,
