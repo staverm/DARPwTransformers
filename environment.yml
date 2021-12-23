@@ -7,7 +7,6 @@ dependencies:
   - numpy
   - matplotlib
   - seaborn
-  - gym
   - pip
   - pip:
     - icecream
@@ -15,3 +14,4 @@ dependencies:
     - drawSvg
     - sklearn
     - clearml
+    - gym
