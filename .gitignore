@@ -5,6 +5,9 @@ __pycache__/
 
 # C extensions
 *.so
+.idea
+darp/.DS_Store
+darp/save_dir
 
 # Distribution / packaging
 .Python
