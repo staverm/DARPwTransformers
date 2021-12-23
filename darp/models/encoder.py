@@ -3,6 +3,9 @@ from .attention import SelfAttention
 
 
 class Encoder(nn.Module):
+    """
+    Encoder block for transformer.
+    """
     def __init__(self, embed_size, heads, dropout, forward_expansion, batch_norm=False):
         super(Encoder, self).__init__()
         self.attention = SelfAttention(embed_size, heads)
@@ -26,9 +29,8 @@ class Encoder(nn.Module):
         # self-attention
         attention = self.attention(value, key, query, mask)
 
-        # TODO check if permutation is needed
         # add and normalize
-        x = (attention + query)  # TODO why attention + query
+        x = (attention + query)
         if self.batch_norm:
             x = x.permute(1, 2, 0).contiguous()
         x = self.dropout(self.norm1(x))

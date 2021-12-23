@@ -1,8 +1,11 @@
 import torch.nn as nn
 import torch
 
-# TODO compute values, keys, query here
+
 class SelfAttention(nn.Module):
+    """
+    Class describes for multi-headed self-attention.
+    """
     def __init__(self, embed_size, heads):
         super(SelfAttention, self).__init__()
         self.embed_size = embed_size
@@ -38,9 +41,6 @@ class SelfAttention(nn.Module):
         # it's just how I like doing matrix multiplication & bmm
 
         energy = torch.einsum("nqhd,nkhd->nhqk", [queries, keys])
-        # queries shape: (N, query_len, heads, heads_dim),
-        # keys shape: (N, key_len, heads, heads_dim)
-        # energy: (N, heads, query_len, key_len)
 
         # Mask padded indices so their weights become 0
         if mask is not None:

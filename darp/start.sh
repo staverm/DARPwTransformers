@@ -8,9 +8,9 @@ python run.py \
 --layers 256 256 \
 --eval_episodes 1 \
 --verbose 0 \
---nb_target 18 \
+--nb_target 16 \
 --image_size 10 \
---nb_drivers 3 \
+--nb_drivers 2 \
 --dataset '' \
 --reward_function ProportionalEndDistance \
 --data_size 10000 \
@@ -21,7 +21,7 @@ python run.py \
 --typ 33 \
 --embed_size 256 \
 --checkpoint_dir '' \
---vocab_size 18 \
+--vocab_size 16 \
 --supervision nn \
 --tag 'Local train' \
 --heads 8 \

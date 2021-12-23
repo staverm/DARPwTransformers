@@ -3,8 +3,8 @@ import torch
 import torch.nn as nn
 
 from utils import get_device, plotting, quinconx
-from classifier import Classifier
-from encoder import Encoder
+from .classifier import Classifier
+from .encoder import Encoder
 
 
 class Trans18(nn.Module):
@@ -119,21 +119,14 @@ class Trans18(nn.Module):
         return src_mask.to(self.device)
 
     def make_trg_mask(self, trg):
-        if self.typ in [17, 18, 19]:
-            N, trg_len, _ = trg[1].shape
-        else:
-            N, trg_len = trg.shape
+        N, trg_len = trg.shape
         trg_mask = torch.tril(torch.ones((trg_len, trg_len))).expand(
             N, 1, trg_len, trg_len
         )
         return trg_mask.to(self.device)
 
     def forward(self, src, trg, positions, times):
-        nb_targets = len(positions[1])
-        nb_drivers = len(positions[2])
-        # actually generates the whole encoding (environment)
         environment = self.env_encoding(src)
-        # todo generate pos and time encoding
         if not positions is None:
             positions = self.positional_encoding(positions)
         if not times is None:

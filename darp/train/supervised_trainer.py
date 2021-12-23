@@ -87,7 +87,7 @@ class SupervisedTrainer():
 
         reward_function = globals()[self.reward_function]()
         if self.typ in [33]:
-            # 1 layer with all infformation concatenated
+            # 1 layer with all information concatenated
             self.classifier_type = 8
             self.encoder_bn=False
             self.decoder_bn=False
